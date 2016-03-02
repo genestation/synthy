@@ -1,0 +1,24 @@
+{{ define "queryBuilder" }}
+{{ template "DEFAULT/HEAD/START" . }}
+{{ template "DEFAULT/STYLE" . }}
+{{ template "DEFAULT/HEAD/END" . }}
+{{ template "DEFAULT/BODY/START" . }}
+{{ template "DEFAULT/NAVBAR" . }}
+{{ template "queryBuilder/content" . }}
+{{ template "DEFAULT/FOOTER" . }}
+{{ template "DEFAULT/SCRIPTS" . }}
+{{ template "DEFAULT/BODY/END" . }}
+{{ end }}
+
+{{ define "queryBuilder/content" }}
+<script src="/asset/js/iframeResizer.min.js"></script>
+<script type="text/javascript">
+	var queryActions = [
+		{style: "btn-primary", label: "Search", action: "/search?query="},
+		{style: "btn-success", label: "Gene Set Analysis", action: "/analysis/gene/set?query="},
+		{style: "btn-warning", label: "Download", action: "/json/_search?query="},
+	];
+</script>
+<iframe src="/_synthy?actions=queryActions&queryVar=query" id="synthy" onload="iFrameResize(this)" scrolling="no" 
+	 frameborder="0" width="100%">Browser does not support iframes</iframe>
+{{ end }}

@@ -1,0 +1,112 @@
+
+{{ define "synthy" }}
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Embeddable SynTHy widget">
+	<meta name="author" content="GEneSTATION">
+	<title>SynTHy</title>
+	<link type="text/css" rel="stylesheet" href="/asset/css/bootstrap.min.css" />
+	<link type="text/css" rel="stylesheet" href="/asset/css/selectize.bootstrap3.css" media="all" />
+	<link type="text/css" rel="stylesheet" href="/asset/css/query-builder.default.min.css" media="all" />
+	<link type="text/css" rel="stylesheet" href="/asset/css/custom/synthy.css" media="all" />
+	<base target="_parent" />
+</head>
+<body>
+<div class="main-container container">
+	<div class="jumbotron">
+		<h2>
+			SynTHy
+			<a href='/faq#SynTHy'>
+				<span class="glyphicon glyphicon-info-sign" data-toggle="popover" data-placement="left" data-title="More information"
+					data-html="true" data-content="<a href='/faq#SynTHy'>Tutorial</a>">
+				</span>
+			</a>
+		</h2>
+		<div id="queryBuilder"></div>
+		<br><a href='/faq#SynTHy'>SynTHy Tutorial</a>
+	</div>
+</div>
+<script src="/asset/js/jquery.min.js"></script>
+<script src="/asset/js/iframeResizer.contentWindow.min.js"></script>
+<script src="/asset/js/bootstrap.min.js"></script>
+<script src="/asset/js/d3.min.js"></script>
+<script src="/asset/js/react.min.js"></script>
+<script src="/asset/js/venn.min.js"></script>
+<script src="/asset/js/selectize.min.js"></script>
+<script src="/asset/js/typeahead.bundle.min.js"></script>
+<script src="/asset/js/autosize.min.js"></script>
+<script src="/asset/js/custom/query.js"></script>
+<script src="/asset/js/custom/queryBuilder.js"></script>
+<script>
+	$(document).ready(function(){
+		var queryScopes = [
+		{{ range $key,$item := .scopes }}
+			{ value: {{ $key }}, text: {{ $item.Name }} },
+		{{ end }}
+		];
+		var queryFilters = {
+		{{ range $index, $fields := .filters }}
+			{{ $index }}: [
+			{{ range $field, $meta := $fields }}
+				{
+					field: {{ $field }},
+					{{ if eq $field "" }}
+						label: "[all]",
+					{{ end }}
+					type: {{ $meta.Type }},
+					{{ if $meta.Stat.Stats }}
+					min: {{ $meta.Stat.Stats.Min }},
+					max: {{ $meta.Stat.Stats.Max}},
+					buckets: {{ $meta.Stat.Buckets }},
+					{{ end }}
+				},
+			{{ end }}
+			],
+		{{ end }}
+		};
+		var queryOperators = [
+			{type: 'match',            nb_inputs: 1, multiple: false, apply_to: ['string']},
+			{type: 'less',             nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
+			{type: 'less_or_equal',    nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
+			{type: 'greater',          nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
+			{type: 'greater_or_equal', nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
+			{type: 'equal',            nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime', 'boolean']},
+			{type: 'not_equal',        nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime', 'boolean']},
+			{type: 'exists',           nb_inputs: 0, multiple: false, apply_to: ['string', 'integer', 'double', 'datetime', 'boolean']},
+		];
+
+		// Helper functions
+		function getQueryParams(qs) {
+			qs = qs.split('+').join(' ');
+
+			var params = {},
+			tokens,
+			re = /[?&]?([^=]+)=([^&]*)/g;
+
+			while (tokens = re.exec(qs)) {
+			params[decodeURIComponent(tokens[1])] = decodeURIComponent(tokens[2]);
+			}
+
+			return params;
+		}
+		var queryParams = getQueryParams(document.location.search);
+
+		React.render(
+			React.createElement(QueryBuilder, {
+				scopes: queryScopes,
+				operators: queryOperators,
+				filters: queryFilters.gene,
+				actions: window.parent[queryParams.actions],
+				queryVar: queryParams.queryVar,
+			}),
+			document.getElementById('queryBuilder')
+		);
+
+	});
+</script>
+</body>
+{{ end }}
