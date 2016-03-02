@@ -1,3 +1,3 @@
-go tool yacc -o query.go -p "query" query.y
-pegjs --export-var reverseParser query.pegjs query.js
-jsx -x jsx . .
+go tool yacc -o synthyQuery.go -p "synthy" synthyQuery.y
+pegjs --export-var synthyParser js/synthyParser.pegjs js/synthyParser.js
+jsx -x jsx js js
