@@ -103,7 +103,7 @@ var GraphSlider = React.createClass({
 			.extent([0, 0])
 			.on("brush", function() {
 				if (d3.event.sourceEvent) { // not a programmatic event
-					let value = that.discretize(
+					var value = that.discretize(
 						that.xScale.invert(d3.mouse(this)[0]));
 					that.brush.extent([parseFloat(value), parseFloat(value)]);
 					var pos = that.xScale(parseFloat(value));
@@ -122,7 +122,7 @@ var GraphSlider = React.createClass({
 			})
 			.on("brushend", function() {
 				if (d3.event.sourceEvent) { // not a programmatic event
-					let value = that.discretize(
+					var value = that.discretize(
 						that.xScale.invert(d3.mouse(this)[0]));
 					that.brush.extent([parseFloat(value), parseFloat(value)]);
 					if(value != that.props.value) {
@@ -995,8 +995,8 @@ var QueryBuilder = React.createClass({
 		if(typeof action === 'function') {
 			action(query);
 		} else if(typeof action === 'object') {
-			let fields = null;
-			let format = null;
+			var fields = null;
+			var format = null;
 			if(action.hasOwnProperty("format")) {
 				if(typeof action.format === 'boolean') {
 					// TODO display dialog
@@ -1011,7 +1011,7 @@ var QueryBuilder = React.createClass({
 					fields = action.fields;
 				}
 			}
-			let url = "/json/_search?query=" + encodeURIComponent(this.scopeQuery(query));
+			var url = "/json/_search?query=" + encodeURIComponent(this.scopeQuery(query));
 			if(fields) {
 				url += "&fields=" + encodeURIComponent(fields.join(','));
 			}
@@ -1048,7 +1048,7 @@ var QueryBuilder = React.createClass({
 		}
 		var queries = [];
 		var vennSet = [];
-		for (let index = 0; index < regions.length; index++) {
+		for (var index = 0; index < regions.length; index++) {
 			var sets = regions[index].map(function(e) { return e.id; })
 			var query = regions[index].map(function(e) { return e.query; }).join(' AND ')
 			var label = ""
@@ -1067,7 +1067,7 @@ var QueryBuilder = React.createClass({
 			});
 		}
 		$.get('/json/_count?query='+queries.join("&query="), function(data) {
-			for(let index = 0; index < vennSet.length; index++) {
+			for(var index = 0; index < vennSet.length; index++) {
 				vennSet[index].size = data[index];
 			}
 			var zeroes = vennSet.filter(function(e){return e.sets.length === 1 && e.size === 0;})
