@@ -1007,7 +1007,7 @@ var QueryBuilder = React.createClass({
 			if(action.hasOwnProperty("fields")) {
 				if(typeof action.fields === 'boolean') {
 					// TODO display dialog
-				} else if(typeof action.fields === 'object' && action.fields.isArray()) {
+				} else if(Array.isArray(action.fields)) {
 					fields = action.fields;
 				}
 			}
