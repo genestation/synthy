@@ -995,28 +995,26 @@ var QueryBuilder = React.createClass({
 		if(typeof action === 'function') {
 			action(query);
 		} else if(typeof action === 'object') {
-			var fields = null;
-			var format = null;
 			if(action.hasOwnProperty("format")) {
 				if(typeof action.format === 'boolean') {
 					// TODO display dialog
-				} else if(typeof action.format === 'string') {
-					format = action.format;
 				}
 			}
 			if(action.hasOwnProperty("fields")) {
 				if(typeof action.fields === 'boolean') {
 					// TODO display dialog
-				} else if(Array.isArray(action.fields)) {
-					fields = action.fields;
 				}
 			}
 			var url = "/json/_search?query=" + encodeURIComponent(this.scopeQuery(query));
-			if(fields) {
-				url += "&fields=" + encodeURIComponent(fields.join(','));
-			}
-			if(format) {
-				url += "&format=" + encodeURIComponent(format);
+			for(var key in action.options) {
+				if(!action.options.hasOwnProperty(key)) continue;
+
+				var value = action.options[key];
+				if(typeof value === 'string') {
+					url += "&" + key + "=" + encodeURIComponent(value);
+				} else if (Array.isArray(value)) {
+					url += "&" + key + "=" + encodeURIComponent(value.join(','));
+				}
 			}
 			action.callback(url);
 		} else {
