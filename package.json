@@ -1,6 +1,11 @@
 {
-	"name": "synthy",
-	"version": "0.1",
-	"description": "Synthesis and Test of Hypotheses",
-	"author": "Mara Kim <mara.kim@vanderbilt.edu>",
+  "name": "synthy",
+  "version": "0.0.1",
+  "description": "Synthesis and Test of Hypotheses",
+  "author": "Mara Kim <mara.kim@vanderbilt.edu>",
+  "devDependencies": {
+    "webpack": "~1.12.14",
+    "babel-core": "~6.7.4",
+    "babel-loader": "~6.2.4"
+  }
 }
