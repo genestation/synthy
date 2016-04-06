@@ -1,7 +1,10 @@
-const common = {
-	entry: './src/js/synthy.jsx',
+var path = require('path')
+
+module.exports = {
+	context: __dirname + "/src",
+	entry: './js/synthy.jsx',
 	output: {
-		path: './app',
+		path: __dirname + '/dist',
 		filename: 'bundle.js'
 	},
 	module: {
