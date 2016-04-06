@@ -1,12 +1,7 @@
 const common = {
-	entry: {
-		app: PATHS.app
-	},
-	resolve: {
-		extensions: ['', '.js', '.jsx']
-	},
+	entry: './src/js/synthy.jsx',
 	output: {
-		path: PATHS.build,
+		path: './app',
 		filename: 'bundle.js'
 	},
 	module: {
@@ -14,12 +9,12 @@ const common = {
 			{
 				test: /\.css$/,
 				loaders: ['style', 'css'],
-				include: PATHS.app
+				include: path.resolve(__dirname, "./src")
 			},
 			{
 				test: /\.jsx?$/,
 				loaders: ['babel?cacheDirectory'],
-				include: PATHS.app
+				include: path.resolve(__dirname, "./src")
 			}
 		]
 	},
