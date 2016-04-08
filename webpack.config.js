@@ -6,7 +6,9 @@ module.exports = {
 	entry: './js/synthy.jsx',
 	output: {
 		path: __dirname + '/dist',
-		filename: 'synthy.js'
+		filename: 'synthy.js',
+		library: "Synthy",
+		libraryTarget: "var"
 	},
 	module: {
 		loaders: [

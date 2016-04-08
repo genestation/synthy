@@ -935,13 +935,14 @@ function parseQueryObject(result, root) {
 		return (result.complement?"NOT ":"") + field + operator + result.value
 	}
 }
-var QueryBuilder = React.createClass({
+
+export var QueryBuilder = React.createClass({
 	getInitialState: function() {
 		var urlQuery = getQueryParams(window.parent.document.location.search);
 		var query = {};
 		if(this.props.queryVar && urlQuery.hasOwnProperty(this.props.queryVar)) {
 			try {
-				query = reverseParser.parse(urlQuery[this.props.queryVar]);
+				query = synthyParser.parse(urlQuery[this.props.queryVar]);
 			} catch (err) {
 				console.log(err)
 			}
@@ -959,7 +960,7 @@ var QueryBuilder = React.createClass({
 		window.parent.addEventListener("popstate", function(event) {
 			if(event.state && event.state.hasOwnProperty("query")) {
 				try {
-					var query = reverseParser.parse(event.state.query);
+					var query = synthyParser.parse(event.state.query);
 					this.setScope(query.scope);
 					this.setRules(query.rules);
 				} catch (err) {
@@ -971,7 +972,7 @@ var QueryBuilder = React.createClass({
 				var query = {};
 				if(this.props.queryVar && urlQuery.hasOwnProperty(this.props.queryVar)) {
 					try {
-						query = reverseParser.parse(urlQuery[this.props.queryVar]);
+						query = synthyParser.parse(urlQuery[this.props.queryVar]);
 					} catch (err) {
 						console.log(err)
 					}
