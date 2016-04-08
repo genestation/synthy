@@ -6,7 +6,7 @@ module.exports = {
 	entry: './js/synthy.jsx',
 	output: {
 		path: __dirname + '/dist',
-		filename: 'bundle.js'
+		filename: 'synthy.js'
 	},
 	module: {
 		loaders: [
