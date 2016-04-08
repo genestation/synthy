@@ -1,4 +1,5 @@
-var path = require('path')
+const path = require('path');
+const ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
 	context: __dirname + "/src",
@@ -10,8 +11,8 @@ module.exports = {
 	module: {
 		loaders: [
 			{
-				test: /\.css$/,
-				loaders: ['style', 'css'],
+				test: /\.scss$/,
+				loaders: ExtractTextPlugin.extract("style-loader", "css-loader|autoprefixer-loader|sass-loader"),
 				include: path.resolve(__dirname, "./src")
 			},
 			{
@@ -21,4 +22,7 @@ module.exports = {
 			}
 		]
 	},
+	plugins: [
+		new ExtractTextPlugin("synthy.css")
+	]
 };
