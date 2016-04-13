@@ -119,12 +119,12 @@ func createQuery(field field, factory queryFactory) elastic.Query {
 top:
 	directive
 	{
-		querylex.(*queryLex).Out.Query = $1
+		querylex.(*synthyLex).Out.Query = $1
 	}
 |	scope directive
 	{
-		querylex.(*queryLex).Out.Scope = $1
-		querylex.(*queryLex).Out.Query = $2
+		querylex.(*synthyLex).Out.Scope = $1
+		querylex.(*synthyLex).Out.Query = $2
 	}
 scope:
 	SCOPE
@@ -479,7 +479,7 @@ const eof = 0
 
 // The parser uses the type <prefix>Lex as a lexer.  It must provide
 // the methods Lex(*<prefix>SymType) int and Error(string).
-type queryLex struct {
+type synthyLex struct {
 	line []byte
 	peek rune
 	Out elasticDirective
@@ -489,7 +489,7 @@ type queryLex struct {
 }
 
 // The parser calls this method to get each new token.
-func (x *queryLex) Lex(yylval *querySymType) int {
+func (x *synthyLex) Lex(yylval *querySymType) int {
 	for {
 		c := x.next()
 		switch c {
@@ -535,7 +535,7 @@ func (x *queryLex) Lex(yylval *querySymType) int {
 }
 
 // Lex a number.
-func (x *queryLex) num(c rune, yylval *querySymType) int {
+func (x *synthyLex) num(c rune, yylval *querySymType) int {
 	var b bytes.Buffer
 	state := 0
 	x.add(&b, c)
@@ -600,7 +600,7 @@ func (x *queryLex) num(c rune, yylval *querySymType) int {
 }
 
 // Lex a nest.
-func (x *queryLex) nest(c rune, yylval *querySymType) int {
+func (x *synthyLex) nest(c rune, yylval *querySymType) int {
 	var b bytes.Buffer
 	L: for {
 		c = x.next()
@@ -643,7 +643,7 @@ func (x *queryLex) nest(c rune, yylval *querySymType) int {
 }
 
 // Lex a feild.
-func (x *queryLex) field(c rune, yylval *querySymType) int {
+func (x *synthyLex) field(c rune, yylval *querySymType) int {
 	var b bytes.Buffer
 	L: for {
 		c = x.next()
@@ -674,7 +674,7 @@ func (x *queryLex) field(c rune, yylval *querySymType) int {
 }
 
 // Lex a scope.
-func (x *queryLex) scope(c rune, yylval *querySymType) int {
+func (x *synthyLex) scope(c rune, yylval *querySymType) int {
 	var b bytes.Buffer
 	L: for {
 		c = x.next()
@@ -695,7 +695,7 @@ func (x *queryLex) scope(c rune, yylval *querySymType) int {
 }
 
 // Lex a word.
-func (x *queryLex) word(c rune, yylval *querySymType) int {
+func (x *synthyLex) word(c rune, yylval *querySymType) int {
 	var b,acc bytes.Buffer
 	x.add(&b, c)
 	state := 0
@@ -753,7 +753,7 @@ func (x *queryLex) word(c rune, yylval *querySymType) int {
 }
 
 // Lex an operator.
-func (x *queryLex) op(c rune, yylval *querySymType) int {
+func (x *synthyLex) op(c rune, yylval *querySymType) int {
 	var b bytes.Buffer
 	state := c
 	x.add(&b, c)
@@ -779,7 +779,7 @@ func (x *queryLex) op(c rune, yylval *querySymType) int {
 }
 
 // Return the next rune for the lexer.
-func (x *queryLex) next() rune {
+func (x *synthyLex) next() rune {
 	if x.peek != eof {
 		r := x.peek
 		x.peek = eof
@@ -797,26 +797,26 @@ func (x *queryLex) next() rune {
 	return c
 }
 
-func (x *queryLex) add(b *bytes.Buffer, c rune) {
+func (x *synthyLex) add(b *bytes.Buffer, c rune) {
 	if _, err := b.WriteRune(c); err != nil {
 		log.Fatalf("WriteRune: %s", err)
 	}
 }
 
-func (x *queryLex) unpeek(c rune) {
+func (x *synthyLex) unpeek(c rune) {
 	if c != eof {
 		x.peek = c
 	}
 }
 
 // The parser calls this method on a parse error.
-func (x *queryLex) Error(s string) {
+func (x *synthyLex) Error(s string) {
 	log.Printf("parse error: %s", s)
 	x.Bad = true
 }
 
 func parseQuery(line string) elasticDirective {
-	q := queryLex{line: []byte(line)}
+	q := synthyLex{line: []byte(line)}
 	queryParse(&q)
 	if q.Bad {
 		// If parse failed
