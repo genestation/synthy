@@ -23,13 +23,13 @@ var Selectize = React.createClass({
 
 var Typeahead = React.createClass({
 	componentDidMount: function() {
-		$(this.refs.typeahead.getDOMNode()).typeahead({
+		$(ReactDOM.findDOMNode(this.refs.typeahead)).typeahead({
 			highlight: true,
 		},{
 			source: this.props.source,
 		}).bind('typeahead:change', this.props.onChange)
 		.bind('typeahead:select', function(e) {
-			$(this.refs.typeahead.getDOMNode()).blur();
+			$(ReactDOM.findDOMNode(this.refs.typeahead)).blur();
 		}.bind(this))
 		.keypress(function(e) {
 			if(e.which == 13) {
@@ -38,7 +38,7 @@ var Typeahead = React.createClass({
 		});
 	},
 	componentDidUpdate: function() {
-		$(this.refs.typeahead.getDOMNode()).typeahead('val',this.props.value);
+		$(ReactDOM.findDOMNode(this.refs.typeahead)).typeahead('val',this.props.value);
 	},
 	render: function() {
 		return (
