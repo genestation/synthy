@@ -2,7 +2,7 @@
 
 var Selectize = React.createClass({
 	componentDidMount: function() {
-		$(this.refs.select.getDOMNode()).selectize({
+		$(ReactDOM.findDOMNode(this.refs.select)).selectize({
 			items: this.props.items,
 			options: this.props.options,
 			onChange: function(value) {
@@ -11,7 +11,7 @@ var Selectize = React.createClass({
 		});
 	},
 	componentDidUpdate: function() {
-		$(this.refs.select.getDOMNode())[0].selectize.setValue(this.props.items, true);
+		$(ReactDOM.findDOMNode(this.refs.select))[0].selectize.setValue(this.props.items, true);
 	},
 	render: function() {
 		return (
@@ -107,17 +107,17 @@ var GraphSlider = React.createClass({
 						that.xScale.invert(d3.mouse(this)[0]));
 					that.brush.extent([parseFloat(value), parseFloat(value)]);
 					var pos = that.xScale(parseFloat(value));
-					d3.select(that.refs.handle.getDOMNode()).
+					d3.select(ReactDOM.findDOMNode(that.refs.handle)).
 						attr("cx", pos);
-					d3.select(that.refs.maskLower.getDOMNode()).
+					d3.select(ReactDOM.findDOMNode(that.refs.maskLower)).
 						attr("x", -that.width+pos);
-					that.refs.input.getDOMNode().value = value;
-					d3.select(that.refs.maskUpper.getDOMNode()).
+					ReactDOM.findDOMNode(that.refs.input).value = value;
+					d3.select(ReactDOM.findDOMNode(that.refs.maskUpper)).
 						attr("x", pos);
-					d3.select(that.refs.maskBound.getDOMNode()).
+					d3.select(ReactDOM.findDOMNode(that.refs.maskBound)).
 						attr("x1", pos).
 						attr("x2", pos);
-					that.refs.input.getDOMNode().value = value;
+					ReactDOM.findDOMNode(that.refs.input).value = value;
 				}
 			})
 			.on("brushend", function() {
@@ -140,30 +140,30 @@ var GraphSlider = React.createClass({
 	},
 	componentDidMount: function() {
 		var that = this;
-		d3.select(this.refs.area.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.area))
 			.datum(this.props.buckets)
 			.attr("d",this.area);
-		d3.select(this.refs.highlightLower.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.highlightLower))
 			.datum(this.props.buckets)
 			.attr("d",this.area);
-		d3.select(this.refs.highlightUpper.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.highlightUpper))
 			.datum(this.props.buckets)
 			.attr("d",this.area);
-		d3.select(this.refs.highlightBound.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.highlightBound))
 			.datum(this.props.buckets)
 			.attr("d",this.area);
 
-		d3.select(this.refs.line.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.line))
 			.datum(this.props.buckets)
 			.attr("d",this.line);
 
-		d3.select(this.refs.xaxis.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.xaxis))
 			.call(this.xAxis)
 			.select(".domain")
 			.select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
 			.attr("class", "halo");
 
-		this.slider = d3.select(this.refs.slider.getDOMNode())
+		this.slider = d3.select(ReactDOM.findDOMNode(this.refs.slider))
 			.call(this.brush);
 
 		this.slider.selectAll(".extent,.resize")
@@ -175,16 +175,16 @@ var GraphSlider = React.createClass({
 			.attr("y", -this.margin.top)
 			.on("mouseover", function() {
 				// Display cursor
-				d3.select(that.refs.cursor.getDOMNode())
+				d3.select(ReactDOM.findDOMNode(that.refs.cursor))
 					.transition().duration(400).style("stroke-opacity", .6);
 			})
 			.on("mousemove", function() {
-				d3.select(that.refs.cursor.getDOMNode())
+				d3.select(ReactDOM.findDOMNode(that.refs.cursor))
 					.attr("x1",d3.mouse(this)[0])
 					.attr("x2",d3.mouse(this)[0]);
 			})
 			.on("mouseout", function() {
-				d3.select(that.refs.cursor.getDOMNode())
+				d3.select(ReactDOM.findDOMNode(that.refs.cursor))
 					.transition().duration(400).style("stroke-opacity", 0);
 			});
 
@@ -199,21 +199,21 @@ var GraphSlider = React.createClass({
 		this.yScale.domain([0,d3.max(this.props.buckets,function(bucket) {
 				return bucket.Count;
 			})]);
-		d3.select(this.refs.xaxis.getDOMNode()).call(this.xAxis);
-		d3.select(this.refs.area.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.xaxis)).call(this.xAxis);
+		d3.select(ReactDOM.findDOMNode(this.refs.area))
 			.datum(this.props.buckets)
 			.attr("d",this.area);
-		d3.select(this.refs.highlightLower.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.highlightLower))
 			.datum(this.props.buckets)
 			.attr("d",this.area);
-		d3.select(this.refs.highlightUpper.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.highlightUpper))
 			.datum(this.props.buckets)
 			.attr("d",this.area);
-		d3.select(this.refs.highlightBound.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.highlightBound))
 			.datum(this.props.buckets)
 			.attr("d",this.area);
 
-		d3.select(this.refs.line.getDOMNode())
+		d3.select(ReactDOM.findDOMNode(this.refs.line))
 			.datum(this.props.buckets)
 			.attr("d",this.line);
 		if(this.props.hasOwnProperty("value")) {
@@ -775,8 +775,8 @@ var QueryBuilderCore = React.createClass({
 var VennDiagram = React.createClass({
 	componentDidMount: function() {
 		if (this.props.sets.length > 0) {
-			var node = d3.select(this.refs.venn.getDOMNode())
-			var tooltip = d3.select(this.refs.tooltip.getDOMNode());
+			var node = d3.select(ReactDOM.findDOMNode(this.refs.venn))
+			var tooltip = d3.select(ReactDOM.findDOMNode(this.refs.tooltip));
 			node.datum(this.props.sets).call(venn.VennDiagram())
 			node.selectAll("svg")
 			    .style("display", "block")
@@ -823,7 +823,7 @@ var VennDiagram = React.createClass({
 		}
 	},
 	componentDidUpdate: function() {
-		var node = this.refs.venn.getDOMNode();
+		var node = ReactDOM.findDOMNode(this.refs.venn);
 		while(node.hasChildNodes()) {
 			node.removeChild(node.lastChild);
 		}
