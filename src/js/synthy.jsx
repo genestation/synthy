@@ -1121,7 +1121,7 @@ export var QueryBuilder = React.createClass({
 				/>
 				{this.props.actions.map(function(item,idx) {
 					return (
-						<button className={"btn "+item.style}
+						<button key={idx} className={"btn "+item.style}
 							onClick={this.submitQuery.bind(this, item.action, undefined)}>
 							{item.label}
 						</button>
