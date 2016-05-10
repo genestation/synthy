@@ -533,6 +533,10 @@ var QueryBuilderGroupCondition = React.createClass({
 });
 
 var QueryBuilderGroup = React.createClass({
+	nextKey: 0,
+	getNextKey: function() {
+		return this.nextKey++;
+	},
 	setCondition: function(condition,path) {
 		if(this.props.hasOwnProperty("index")) {
 			path.unshift(this.props.index);
@@ -600,7 +604,11 @@ var QueryBuilderGroup = React.createClass({
 				</dt>
 				<dd className="rules-group-body">
 					<ul className="rules-list">
-						{this.props.rules.map(function(item,idx) {
+						{this.props.rules.map(function(item,idx,array) {
+							if(!item.hasOwnProperty('key')) {
+								item.key = this.getNextKey();
+								array[idx] = item;
+							}
 							if(item.hasOwnProperty('rules')) {
 								return (
 									<QueryBuilderGroup
@@ -611,6 +619,7 @@ var QueryBuilderGroup = React.createClass({
 										alterRule={this.alterRule}
 										deleteRule={this.deleteRule}
 										schema={this.props.schema}
+										key={item.key}
 										index={idx}
 										complement={item.complement?true:false}
 										condition={item.condition}
@@ -622,6 +631,7 @@ var QueryBuilderGroup = React.createClass({
 										alterRule={this.alterRule}
 										deleteRule={this.deleteRule}
 										schema={this.props.schema}
+										key={item.key}
 										index={idx}
 										complement={item.complement?true:false}
 										field={item.field}
