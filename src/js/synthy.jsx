@@ -521,11 +521,11 @@ var QueryBuilderGroupCondition = React.createClass({
 			<div className="btn-group" role="group" aria-label="condition">
 				<button type="button"
 					className={this.props.condition==="AND"?active:inactive}
-					onClick={this.props.setCondition.bind(this,"AND",[])}
+					onClick={this.props.setCondition.bind(null,"AND",[])}
 					>AND</button>
 				<button type="button"
 					className={this.props.condition==="OR"?active:inactive}
-					onClick={this.props.setCondition.bind(this,"OR",[])}
+					onClick={this.props.setCondition.bind(null,"OR",[])}
 					>OR</button>
 			</div>
 		);
@@ -575,7 +575,7 @@ var QueryBuilderGroup = React.createClass({
 				<dt className="rules-group-header">
 					<div className="pull-right group-actions">
 						<div className="onoffswitch"
-							onClick={this.props.setComplement.bind(this,!this.props.complement,[])}
+							onClick={this.props.setComplement.bind(null,!this.props.complement,[])}
 							>
 							<input type="checkbox" name="onoffswitch" className="onoffswitch-checkbox"
 								checked={this.props.complement}
@@ -588,7 +588,7 @@ var QueryBuilderGroup = React.createClass({
 						{
 							this.props.hasOwnProperty("index")?
 							<button type="button" className="btn btn-xs btn-link btn-exit"
-								onClick={this.props.deleteRule.bind(this,[this.props.index])}>
+								onClick={this.props.deleteRule.bind(null,[this.props.index])}>
 								<i className="glyphicon glyphicon-remove"></i>
 							</button>
 							:null
@@ -632,12 +632,12 @@ var QueryBuilderGroup = React.createClass({
 						},this)}
 						<li className="rule-container" style={{width:"40px",background:"none"}}>
 							<button type="button" className="btn btn-xs btn-default"
-								onClick={this.addRule.bind(this,[this.props.rules.length])}>
+								onClick={this.addRule.bind(null,[this.props.rules.length])}>
 								<i className="glyphicon glyphicon-plus"></i>
 								&nbsp;Rule
 							</button>
 							<button type="button" className="btn btn-xs" style={{backgroundColor:"rgb(220,200,150)"}}
-								onClick={this.addGroup.bind(this,[this.props.rules.length])}>
+								onClick={this.addGroup.bind(null,[this.props.rules.length])}>
 								<i className="glyphicon glyphicon-plus"></i>
 								&nbsp;Group
 							</button>
@@ -1122,7 +1122,7 @@ export var QueryBuilder = React.createClass({
 				{this.props.actions.map(function(item,idx) {
 					return (
 						<button key={idx} className={"btn "+item.style}
-							onClick={this.submitQuery.bind(this, item.action, undefined)}>
+							onClick={this.submitQuery.bind(null, item.action, undefined)}>
 							{item.label}
 						</button>
 					)
