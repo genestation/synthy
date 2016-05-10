@@ -1,19 +1,26 @@
+{
+	var nextKey = 0;
+	function getNextKey() {
+		return this.nextKey++;
+	};
+}
+
 root
 	= scope:scope _ top:top
 	{
-		return {scope: scope, rules: top};
+		return {nextKey: nextKey, scope: scope, rules: top};
 	}
 	/ top:top _
 	{
-		return {scope: null, rules: top};
+		return {nextKey: nextKey, scope: null, rules: top};
 	}
 	/ scope:scope _
 	{
-		return {scope: scope, rules: null};
+		return {nextKey: nextKey, scope: scope, rules: null};
 	}
 	/ ''
 	{
-		return {scope: null, rules:null};
+		return {nextKey: nextKey, scope: null, rules:null};
 	}
 top
 	= directive:directive
@@ -21,7 +28,8 @@ top
 		if(directive.grouped) {
 			return {
 				condition: 'AND',
-				rules: [directive]
+				rules: [directive],
+				key: nextKey()
 			}
 		} else {
 			return directive;
@@ -37,13 +45,15 @@ directive
 			} else {
 				return {
 					condition: 'AND',
-					rules: [disjunction[0]]
+					rules: [disjunction[0]],
+					key: nextKey()
 				};
 			}
 		} else {
 			return {
 				condition: 'OR',
-				rules: disjunction
+				rules: disjunction,
+				key: nextKey()
 			};
 		}
 	}
@@ -51,7 +61,8 @@ directive
 disjunction
 	= head:conjunction ( _ 'OR' _ tail:conjunction)+
 	{
-		return [head].concat(tail.map(function(e){return e[e.length-1];}));
+		head.key = nextKey();
+		return [head].concat(tail.map(function(e){var rule = e[e.length-1]; rule.key = nextKey(); return rule;}));
 	}
 	/ conjunction:conjunction
 	{
@@ -60,7 +71,8 @@ disjunction
 		} else {
 			return [{
 				condition: 'AND',
-				rules: conjunction
+				rules: conjunction,
+				key: nextKey()
 			}];
 		}
 	}
@@ -68,10 +80,12 @@ disjunction
 conjunction
 	= head:rule tail:( _ 'AND' _ rule)+
 	{
-		return [head].concat(tail.map(function(e){return e[e.length-1];}));
+		head.key = nextKey();
+		return [head].concat(tail.map(function(e){var rule = e[e.length-1]; rule.key = nextKey(); return rule;}));
 	}
 	/ rule:rule
 	{
+		rule.key = nextKey();
 		return [rule];
 	}
 

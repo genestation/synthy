@@ -355,6 +355,7 @@ var QueryBuilderRule = React.createClass({
 			operator: this.props.operator,
 			value: this.props.value,
 			complement: !this.props.complement,
+			id: this.props.id,
 		},[this.props.index]);
 	},
 	setField: function(field) {
@@ -375,6 +376,7 @@ var QueryBuilderRule = React.createClass({
 			operator: schema.operators[0],
 			value: value,
 			complement: this.props.complement,
+			id: this.props.id,
 		},[this.props.index]);
 	},
 	setOperator: function(event) {
@@ -383,6 +385,7 @@ var QueryBuilderRule = React.createClass({
 			operator: event.target.value,
 			value: this.props.value,
 			complement: this.props.complement,
+			id: this.props.id,
 		},[this.props.index]);
 	},
 	setValueEvent: function(event) {
@@ -394,6 +397,7 @@ var QueryBuilderRule = React.createClass({
 			operator: this.props.operator,
 			value: value,
 			complement: this.props.complement,
+			id: this.props.id,
 		},[this.props.index]);
 	},
 	autocomplete: function(query, syncResults, asyncResults) {
@@ -536,10 +540,6 @@ var QueryBuilderGroupCondition = React.createClass({
 });
 
 var QueryBuilderGroup = React.createClass({
-	nextKey: 0,
-	getNextKey: function() {
-		return this.nextKey++;
-	},
 	setCondition: function(condition,path) {
 		if(this.props.hasOwnProperty("index")) {
 			path.unshift(this.props.index);
@@ -608,10 +608,6 @@ var QueryBuilderGroup = React.createClass({
 				<dd className="rules-group-body">
 					<ul className="rules-list">
 						{this.props.rules.map(function(item,idx,array) {
-							if(!item.hasOwnProperty('key')) {
-								item.key = this.getNextKey();
-								array[idx] = item;
-							}
 							if(item.hasOwnProperty('rules')) {
 								return (
 									<QueryBuilderGroup
@@ -622,7 +618,8 @@ var QueryBuilderGroup = React.createClass({
 										alterRule={this.alterRule}
 										deleteRule={this.deleteRule}
 										schema={this.props.schema}
-										key={item.key}
+										key={item.id}
+										id={item.id}
 										index={idx}
 										complement={item.complement?true:false}
 										condition={item.condition}
@@ -634,7 +631,8 @@ var QueryBuilderGroup = React.createClass({
 										alterRule={this.alterRule}
 										deleteRule={this.deleteRule}
 										schema={this.props.schema}
-										key={item.key}
+										key={item.id}
+										id={item.id}
 										index={idx}
 										complement={item.complement?true:false}
 										field={item.field}
@@ -693,6 +691,7 @@ var QueryBuilderCore = React.createClass({
 		});
 		ptr.rules[last] = {
 			field: this.props.filters[0].field,
+			id: this.props.getNextKey(),
 		};
 		this.props.setRules(rules);
 	},
@@ -706,7 +705,11 @@ var QueryBuilderCore = React.createClass({
 			}
 			last = item;
 		});
-		ptr.rules[last] = {condition: "AND", rules:[]};
+		ptr.rules[last] = {
+			condition: "AND",
+			rules:[],
+			id: this.props.getNextKey(),
+		};
 		this.props.setRules(rules);
 	},
 	alterRule: function(rule,path) {
@@ -950,12 +953,17 @@ function parseQueryObject(result, root) {
 }
 
 export var QueryBuilder = React.createClass({
+	nextKey: 0,
+	getNextKey: function() {
+		return this.nextKey++;
+	},
 	getInitialState: function() {
 		var urlQuery = getQueryParams(window.parent.document.location.search);
 		var query = {};
 		if(this.props.queryVar && urlQuery.hasOwnProperty(this.props.queryVar)) {
 			try {
 				query = synthyParser.parse(urlQuery[this.props.queryVar]);
+				nextKey = query.nextKey;
 			} catch (err) {
 				console.log(err)
 			}
@@ -974,6 +982,7 @@ export var QueryBuilder = React.createClass({
 			if(event.state && event.state.hasOwnProperty("query")) {
 				try {
 					var query = synthyParser.parse(event.state.query);
+					nextKey = query.nextKey;
 					this.setScope(query.scope);
 					this.setRules(query.rules);
 				} catch (err) {
@@ -986,6 +995,7 @@ export var QueryBuilder = React.createClass({
 				if(this.props.queryVar && urlQuery.hasOwnProperty(this.props.queryVar)) {
 					try {
 						query = synthyParser.parse(urlQuery[this.props.queryVar]);
+						nextKey = query.nextKey;
 					} catch (err) {
 						console.log(err)
 					}
@@ -1131,6 +1141,7 @@ export var QueryBuilder = React.createClass({
 					filters={this.props.filters}
 					rules={this.state.rules}
 					setRules={this.setRules}
+					getNextKey={this.getNextKey}
 				/>
 				{this.props.actions.map(function(item,idx) {
 					return (
