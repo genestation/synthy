@@ -417,6 +417,7 @@ var QueryBuilderRule = React.createClass({
 			case "string":
 				fields.push(
 					<Typeahead
+						key={i}
 						value={this.props.value}
 						source={this.autocomplete}
 						onChange={this.setValueEvent}/>
@@ -425,7 +426,9 @@ var QueryBuilderRule = React.createClass({
 			case "integer":
 			case "double":
 				fields.push(
-					<GraphSlider value={this.props.value}
+					<GraphSlider
+						key={i}
+						value={this.props.value}
 						min={schema.min}
 						max={schema.max}
 						buckets={schema.buckets}
@@ -461,9 +464,9 @@ var QueryBuilderRule = React.createClass({
 				<select className="form-control"
 					onChange={this.setOperator}
 					value={this.props.operator}>
-					{this.props.schema.filters[this.props.field].operators.map(function(item) {
+					{this.props.schema.filters[this.props.field].operators.map(function(item, idx) {
 						return (
-							<option value={item}>
+							<option key={idx} value={item}>
 								{item.replace(/_/g," ")}
 							</option>
 						);
