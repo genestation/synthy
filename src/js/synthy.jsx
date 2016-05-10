@@ -1,5 +1,8 @@
 "use strict";
 
+import React from 'react';
+import ReactDOM from 'react-dom';
+
 var Selectize = React.createClass({
 	componentDidMount: function() {
 		$(ReactDOM.findDOMNode(this.refs.select)).selectize({
@@ -952,7 +955,7 @@ function parseQueryObject(result, root) {
 	}
 }
 
-export var QueryBuilder = React.createClass({
+var QueryBuilder = React.createClass({
 	nextKey: 0,
 	getNextKey: function() {
 		return this.nextKey++;
@@ -1155,3 +1158,7 @@ export var QueryBuilder = React.createClass({
 		);
 	}
 })
+
+export function init(element, options) {
+	ReactDOM.render(React.createElement(QueryBuilder, options), element);
+}
