@@ -305,7 +305,7 @@ var GraphSlider = React.createClass({
 								<line ref="cursor"
 									x1="0" y1={this.height-5}
 									x2="0" y2={-this.margin.top/2}
-									style={{stroke: "rgb(50,90,250)", fill: "none", "stroke-opacity": 0}} />
+									style={{stroke: "rgb(50,90,250)", fill: "none", "strokeOpacity": 0}} />
 								<circle ref="handle" className="handle"
 									r="6" transform={"translate(0," + this.height + ")"}
 									cx={this.props.hasOwnProperty("value")?this.xScale(this.props.value):0}
