@@ -15,6 +15,10 @@ module.exports = {
 				test: /\.jsx?$/,
 				loaders: ['babel?cacheDirectory'],
 				include: path.resolve(__dirname, "./src")
+			},
+			{
+				test: /\.pegjs$/,
+				loader: 'pegjs-loader'
 			}
 		]
 	},

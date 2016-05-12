@@ -1,26 +1,26 @@
 {
-	var nextKey = 0;
-	function getNextKey() {
-		return this.nextKey++;
+	var currKey = 0;
+	function nextKey() {
+		return currKey++;
 	};
 }
 
 root
 	= scope:scope _ top:top
 	{
-		return {nextKey: nextKey, scope: scope, rules: top};
+		return {nextKey: currKey, scope: scope, rules: top};
 	}
 	/ top:top _
 	{
-		return {nextKey: nextKey, scope: null, rules: top};
+		return {nextKey: currKey, scope: null, rules: top};
 	}
 	/ scope:scope _
 	{
-		return {nextKey: nextKey, scope: scope, rules: null};
+		return {nextKey: currKey, scope: scope, rules: null};
 	}
 	/ ''
 	{
-		return {nextKey: nextKey, scope: null, rules:null};
+		return {nextKey: currKey, scope: null, rules:null};
 	}
 top
 	= directive:directive
@@ -29,7 +29,7 @@ top
 			return {
 				condition: 'AND',
 				rules: [directive],
-				key: nextKey()
+				id: nextKey()
 			}
 		} else {
 			return directive;
@@ -46,14 +46,14 @@ directive
 				return {
 					condition: 'AND',
 					rules: [disjunction[0]],
-					key: nextKey()
+					id: nextKey()
 				};
 			}
 		} else {
 			return {
 				condition: 'OR',
 				rules: disjunction,
-				key: nextKey()
+				id: nextKey()
 			};
 		}
 	}
@@ -61,8 +61,8 @@ directive
 disjunction
 	= head:conjunction ( _ 'OR' _ tail:conjunction)+
 	{
-		head.key = nextKey();
-		return [head].concat(tail.map(function(e){var rule = e[e.length-1]; rule.key = nextKey(); return rule;}));
+		head.id = nextKey();
+		return [head].concat(tail.map(function(e){var rule = e[e.length-1]; rule.id = nextKey(); return rule;}));
 	}
 	/ conjunction:conjunction
 	{
@@ -72,7 +72,7 @@ disjunction
 			return [{
 				condition: 'AND',
 				rules: conjunction,
-				key: nextKey()
+				id: nextKey()
 			}];
 		}
 	}
@@ -80,12 +80,12 @@ disjunction
 conjunction
 	= head:rule tail:( _ 'AND' _ rule)+
 	{
-		head.key = nextKey();
-		return [head].concat(tail.map(function(e){var rule = e[e.length-1]; rule.key = nextKey(); return rule;}));
+		head.id = nextKey();
+		return [head].concat(tail.map(function(e){var rule = e[e.length-1]; rule.id = nextKey(); return rule;}));
 	}
 	/ rule:rule
 	{
-		rule.key = nextKey();
+		rule.id = nextKey();
 		return [rule];
 	}
 
@@ -283,7 +283,7 @@ rule
 			operator: 'exists'
 		};
 	}
-	/
+	/ _
 	{ /* empty conjunction */
 		return {
 			field: ""

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import synthyParser from './synthyParser.pegjs';
 
 var Selectize = React.createClass({
 	componentDidMount: function() {
@@ -694,7 +695,7 @@ var QueryBuilderCore = React.createClass({
 		});
 		ptr.rules[last] = {
 			field: this.props.filters[0].field,
-			id: this.props.getNextKey(),
+			id: this.props.nextKey(),
 		};
 		this.props.setRules(rules);
 	},
@@ -711,7 +712,7 @@ var QueryBuilderCore = React.createClass({
 		ptr.rules[last] = {
 			condition: "AND",
 			rules:[],
-			id: this.props.getNextKey(),
+			id: this.props.nextKey(),
 		};
 		this.props.setRules(rules);
 	},
@@ -956,9 +957,9 @@ function parseQueryObject(result, root) {
 }
 
 var QueryBuilder = React.createClass({
-	nextKey: 0,
-	getNextKey: function() {
-		return this.nextKey++;
+	currKey: 0,
+	nextKey: function() {
+		return this.currKey++;
 	},
 	getInitialState: function() {
 		var urlQuery = getQueryParams(window.parent.document.location.search);
@@ -966,7 +967,7 @@ var QueryBuilder = React.createClass({
 		if(this.props.queryVar && urlQuery.hasOwnProperty(this.props.queryVar)) {
 			try {
 				query = synthyParser.parse(urlQuery[this.props.queryVar]);
-				nextKey = query.nextKey;
+				this.currKey = query.currKey;
 			} catch (err) {
 				console.log(err)
 			}
@@ -985,7 +986,7 @@ var QueryBuilder = React.createClass({
 			if(event.state && event.state.hasOwnProperty("query")) {
 				try {
 					var query = synthyParser.parse(event.state.query);
-					nextKey = query.nextKey;
+					this.currKey = query.currKey;
 					this.setScope(query.scope);
 					this.setRules(query.rules);
 				} catch (err) {
@@ -998,7 +999,7 @@ var QueryBuilder = React.createClass({
 				if(this.props.queryVar && urlQuery.hasOwnProperty(this.props.queryVar)) {
 					try {
 						query = synthyParser.parse(urlQuery[this.props.queryVar]);
-						nextKey = query.nextKey;
+						this.currKey = query.currKey;
 					} catch (err) {
 						console.log(err)
 					}
@@ -1144,7 +1145,7 @@ var QueryBuilder = React.createClass({
 					filters={this.props.filters}
 					rules={this.state.rules}
 					setRules={this.setRules}
-					getNextKey={this.getNextKey}
+					nextKey={this.nextKey}
 				/>
 				{this.props.actions.map(function(item,idx) {
 					return (
