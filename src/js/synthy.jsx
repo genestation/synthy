@@ -228,7 +228,7 @@ var GraphSlider = React.createClass({
 								<stop offset="0%" stopColor="grey"></stop>
 								<stop offset="5%" stopColor="white"></stop>
 							</linearGradient>
-							<mask id={"maskLower" + this.xScale(this.props.value)} x="0" y="0" width={this.width} height={this.height} >
+							<mask id={"maskLower-" + this.props.id} x="0" y="0" width={this.width} height={this.height} >
 								<rect ref="maskLower"
 									x={this.props.hasOwnProperty("value")?-this.width+this.xScale(this.props.value):-this.width}
 									y={-this.margin.top}
@@ -239,7 +239,7 @@ var GraphSlider = React.createClass({
 										fill: this.props.highlightBound?"white":"url(#gradientLower)",
 									}}></rect>
 							</mask>
-							<mask id={"maskUpper" + this.xScale(this.props.value)} x="0" y="0" width={this.width} height={this.height} >
+							<mask id={"maskUpper-" + this.props.id} x="0" y="0" width={this.width} height={this.height} >
 								<rect ref="maskUpper"
 									x={this.props.hasOwnProperty("value")?this.xScale(this.props.value):0}
 									y={-this.margin.top}
@@ -250,7 +250,7 @@ var GraphSlider = React.createClass({
 										fill: this.props.highlightBound?"white":"url(#gradientUpper)",
 									}}></rect>
 							</mask>
-							<mask id={"maskBound" + this.xScale(this.props.value)} x="0" y="0" width={this.width} height={this.height} >
+							<mask id={"maskBound-" + this.props.id} x="0" y="0" width={this.width} height={this.height} >
 								<line ref="maskBound"
 									x1={this.props.hasOwnProperty("value")?this.xScale(this.props.value):0}
 									y1={-this.margin.top}
@@ -266,19 +266,19 @@ var GraphSlider = React.createClass({
 								style={{
 									display: this.props.highlightLower?"inline":"none",
 									fill: "rgb(50,90,250)",
-									mask: "url(#maskLower" + this.xScale(this.props.value) + ")"
+									mask: "url(#maskLower-" + this.props.id + ")"
 								}}></path>
 							<path ref="highlightUpper"
 								style={{
 									display: this.props.highlightUpper?"inline":"none",
 									fill: "rgb(50,90,250)",
-									mask: "url(#maskUpper" + this.xScale(this.props.value) + ")"
+									mask: "url(#maskUpper-" + this.props.id + ")"
 								}}></path>
 							<path ref="highlightBound"
 								style={{
 									display: this.props.highlightBound?"inline":"none",
 									fill: "rgb(50,90,250)",
-									mask: "url(#maskBound" + this.xScale(this.props.value) + ")"
+									mask: "url(#maskBound-" + this.props.id + ")"
 								}}></path>
 							<path ref="line" style={{stroke: "rgb(0,0,0)", fill: "none"}}></path>
 							<g ref="xaxis" className="x axis" transform={"translate(0,"+this.height+")"}></g>
@@ -448,6 +448,7 @@ var QueryBuilderRule = React.createClass({
 				fields.push(
 					<GraphSlider
 						key={i}
+						id={"graphslider" + this.props.id + '.' + i}
 						value={this.props.value}
 						min={schema.min}
 						max={schema.max}
