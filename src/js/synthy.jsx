@@ -2,6 +2,7 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom';
+import Autosuggest from 'react-autosuggest';
 import synthyParser from './synthyParser.pegjs';
 
 var Selectize = React.createClass({
@@ -21,33 +22,6 @@ var Selectize = React.createClass({
 		return (
 			<select ref="select">
 			</select>
-		);
-	}
-});
-
-var Typeahead = React.createClass({
-	componentDidMount: function() {
-		$(ReactDOM.findDOMNode(this.refs.typeahead)).typeahead({
-			highlight: true,
-		},{
-			source: this.props.source,
-		}).bind('typeahead:change', this.props.onChange)
-		.bind('typeahead:select', function(e) {
-			$(ReactDOM.findDOMNode(this.refs.typeahead)).blur();
-		}.bind(this))
-		.keypress(function(e) {
-			if(e.which == 13) {
-				$(e.target).blur()
-			}
-		});
-	},
-	componentDidUpdate: function() {
-		$(ReactDOM.findDOMNode(this.refs.typeahead)).typeahead('val',this.props.value);
-	},
-	render: function() {
-		return (
-			<input ref="typeahead" className="typeahead form-control" type="text">
-			</input>
 		);
 	}
 });
@@ -328,9 +302,10 @@ var QueryBuilderRule = React.createClass({
 	getInitialState: function() {
 		return {
 			error: "",
+			suggestions: [],
 		};
 	},
-	componentDidUpdate: function() {
+	componentDidUpdate: function(prevProps, prevState) {
 		var query = parseQueryObject({
 			field: this.props.field,
 			operator: this.props.operator,
@@ -392,10 +367,14 @@ var QueryBuilderRule = React.createClass({
 			id: this.props.id,
 		},[this.props.index]);
 	},
-	setValueEvent: function(event) {
-		this.setValue(event.target.value);
+	setValueEvent: function(event,{newValue}) {
+		this.setValue(newValue);
 	},
 	setValue: function(value) {
+		console.log(value);
+		if(this.props.schema.filters[this.props.field].type == "string") {
+			this.updateSuggestions(value);
+		}
 		this.props.alterRule({
 			field: this.props.field,
 			operator: this.props.operator,
@@ -404,14 +383,31 @@ var QueryBuilderRule = React.createClass({
 			id: this.props.id,
 		},[this.props.index]);
 	},
-	autocomplete: function(query, syncResults, asyncResults) {
-		if(!query.length) {
-			syncResults([]);
+	updateSuggestions: function(query) {
+		if(!query.length && this.state.suggestions.length > 0) {
+			this.setState({
+				suggestions: []
+			});
 		} else {
-			$.get('/json/'+this.props.schema.scope+'/_suggest?query='+encodeURIComponent(query)+'&fields='+encodeURIComponent(this.props.field), function(data) {
-				asyncResults(data[0]);
-			}.bind(this));
+			var request = new XMLHttpRequest();
+			var that = this;
+			request.open(
+				'GET',
+				'/json/'+this.props.schema.scope+'/_suggest?query='+encodeURIComponent(query)+'&fields='+encodeURIComponent(this.props.field),
+				true);
+			request.onload = function(data) {
+				if(request.status >= 200 && request.status < 400) {
+					var data = JSON.parse(request.responseText);
+					that.setState({
+						suggestions: data[0]
+					});
+				}
+			};
+			request.send();
 		}
+	},
+	onSuggestionUpdateRequested: function({value}) {
+		this.updateSuggestions(value);
 	},
 	valueElement: function() {
 		if(!this.props.field || !this.props.operator) {
@@ -424,11 +420,24 @@ var QueryBuilderRule = React.createClass({
 			switch(schema.type) {
 			case "string":
 				fields.push(
-					<Typeahead
+					<Autosuggest
 						key={i}
-						value={this.props.value}
-						source={this.autocomplete}
-						onChange={this.setValueEvent}/>
+						id={"autosuggest" + this.props.id + '.' + i}
+						suggestions={this.state.suggestions}
+						onSuggestionsUpdateRequested={this.onSuggestionUpdateRequested}
+						getSuggestionValue={function(suggestion) {
+							console.log(suggestion);
+							return suggestion;
+						}}
+						renderSuggestion={function(suggestion) {
+							return <span>{suggestion}</span>;
+						}}
+						inputProps={{
+							value: this.props.value,
+							onChange: this.setValueEvent,
+							type: "search",
+							className: "form-control",
+						}}/>
 				);
 				break;
 			case "integer":
