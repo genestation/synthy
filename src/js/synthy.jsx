@@ -6,6 +6,7 @@ import Autosuggest from 'react-autosuggest';
 import synthyParser from './synthyParser.pegjs';
 
 import '../css/synthy.css';
+import '../css/graphslider.css';
 import '../css/autosuggest.css';
 
 var Selectize = React.createClass({
