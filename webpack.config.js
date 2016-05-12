@@ -1,4 +1,5 @@
 const path = require('path');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
 	context: __dirname + "/src",
@@ -19,7 +20,14 @@ module.exports = {
 			{
 				test: /\.pegjs$/,
 				loader: 'pegjs-loader'
-			}
+			},
+			{
+				test: /\.css$/,
+				loader: ExtractTextPlugin.extract("style-loader", "css-loader")
+			},
 		]
 	},
+	plugins: [
+		new ExtractTextPlugin("synthy.css")
+	]
 };

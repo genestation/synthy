@@ -5,6 +5,9 @@ import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
 import synthyParser from './synthyParser.pegjs';
 
+import '../css/synthy.css';
+import '../css/autosuggest.css';
+
 var Selectize = React.createClass({
 	componentDidMount: function() {
 		$(ReactDOM.findDOMNode(this.refs.select)).selectize({
