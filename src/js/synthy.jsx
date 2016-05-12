@@ -5,9 +5,11 @@ import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
 import synthyParser from './synthyParser.pegjs';
 
-import '../css/synthy.css';
+import '../css/vendor/selectize.bootstrap3.css';
+import '../css/vendor/query-builder.default.min.css';
 import '../css/graphslider.css';
 import '../css/autosuggest.css';
+import '../css/synthy.css';
 
 var Selectize = React.createClass({
 	componentDidMount: function() {
