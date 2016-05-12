@@ -1160,5 +1160,7 @@ var QueryBuilder = React.createClass({
 })
 
 export function init(element, options) {
-	ReactDOM.render(React.createElement(QueryBuilder, options), element);
+	document.addEventListener("DOMContentLoaded", function(event) {
+		ReactDOM.render(React.createElement(QueryBuilder, options), element);
+	});
 }
