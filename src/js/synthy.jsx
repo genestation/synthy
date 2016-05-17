@@ -4,6 +4,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
 import {SimpleSelect} from 'react-selectize';
+import d3 from 'd3';
+import venn from 'venn.js';
 import synthyParser from './synthyParser.pegjs';
 
 import '../css/vendor/query-builder.default.min.css';
