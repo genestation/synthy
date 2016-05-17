@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
@@ -28,6 +29,12 @@ module.exports = {
 		]
 	},
 	plugins: [
-		new ExtractTextPlugin("synthy.css")
+		new ExtractTextPlugin("synthy.css"),
+		new webpack.DefinePlugin({
+			'process.env.NODE_ENV': '"production"'
+		}),
+		new webpack.optimize.UglifyJsPlugin(),
+		new webpack.optimize.OccurenceOrderPlugin(),
+		new webpack.optimize.DedupePlugin()
 	]
 };
