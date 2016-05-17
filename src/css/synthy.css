@@ -1,4 +1,10 @@
-.jumbotron{
+@import '../../node_modules/react-selectize/themes/index.css';
+
+.react-selectize.root-node {
+	width: 100%;
+}
+
+.jumbotron {
 	margin-top:30px;
 	padding-top:2px;
 }

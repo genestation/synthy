@@ -3,34 +3,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
+import {SimpleSelect} from 'react-selectize';
 import synthyParser from './synthyParser.pegjs';
 
-import '../css/vendor/selectize.bootstrap3.css';
 import '../css/vendor/query-builder.default.min.css';
 import '../css/graphslider.css';
 import '../css/autosuggest.css';
 import '../css/synthy.css';
-
-var Selectize = React.createClass({
-	componentDidMount: function() {
-		$(ReactDOM.findDOMNode(this.refs.select)).selectize({
-			items: this.props.items,
-			options: this.props.options,
-			onChange: function(value) {
-				this.props.onChange(value);
-			}.bind(this),
-		});
-	},
-	componentDidUpdate: function() {
-		$(ReactDOM.findDOMNode(this.refs.select))[0].selectize.setValue(this.props.items, true);
-	},
-	render: function() {
-		return (
-			<select ref="select">
-			</select>
-		);
-	}
-});
 
 var GraphSlider = React.createClass({
 	getDefaultProps: function() {
@@ -377,7 +356,6 @@ var QueryBuilderRule = React.createClass({
 		this.setValue(newValue);
 	},
 	setValue: function(value) {
-		console.log(value);
 		if(this.props.schema.filters[this.props.field].type == "string") {
 			this.updateSuggestions(value);
 		}
@@ -432,7 +410,6 @@ var QueryBuilderRule = React.createClass({
 						suggestions={this.state.suggestions}
 						onSuggestionsUpdateRequested={this.onSuggestionUpdateRequested}
 						getSuggestionValue={function(suggestion) {
-							console.log(suggestion);
 							return suggestion;
 						}}
 						renderSuggestion={function(suggestion) {
@@ -500,6 +477,7 @@ var QueryBuilderRule = React.createClass({
 		)
 	},
 	render: function() {
+		var self = this;
 		return (
 			<li className={"rule-container "+(this.state.error.length>0?"has-error":"")}>
 				<div className="rule-header">
@@ -528,9 +506,11 @@ var QueryBuilderRule = React.createClass({
 				</div>
 				<div className="rule-components row">
 					<div className="rule-filter-container col-sm-3">
-						<Selectize items={[this.props.field]}
+						<SimpleSelect value={{label:this.props.field,value:this.props.field}}
 							options={this.props.schema.fieldArray}
-							onChange={this.setField}/>
+							onValueChange={function({value}={value:""}){self.setField(value);}}
+							hideResetButton={true}
+						/>
 					</div>
 					{this.operatorElement()}
 					{this.valueElement()}
@@ -780,7 +760,7 @@ var QueryBuilderCore = React.createClass({
 			filters[filter.field] = filter;
 			fieldArray.push({
 				value: filter.field,
-				text: filter.label,
+				label: filter.label,
 			});
 		},this);
 		var schema = {
@@ -1143,10 +1123,14 @@ var QueryBuilder = React.createClass({
 		this.updateVenn();
 	},
 	render: function() {
+		var self = this;
 		return (
 			<div className="query-builder-container">
-				<Selectize items={[this.state.scope]} options={this.props.scopes}
-					onChange={this.setScope}/>
+				<SimpleSelect value={{label:this.state.scope,value:this.state.scope}}
+					options={this.props.scopes}
+					onValueChange={function({value}){self.setScope(value);}}
+					hideResetButton={true}
+				/>
 				<VennDiagram ref="venn" sets={this.state.venn}
 					tooltip={function(d,i) {
 						return (d.query.length?d.query:d.label) + "<br>" + d.size + " hits";
