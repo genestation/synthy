@@ -4,21 +4,14 @@ A tool for the synthesis and test of hypotheses.
 
 ## Usage
 
-1. [Install go >= 1.4](https://golang.org/doc/install) and [setup GOPATH](https://golang.org/doc/code.html#GOPATH)
-2. Setup the project:
+Configure dependencies:
 
-```
-# Fetch project
-git clone git@code.rokaslab.org:genestation/genestation-web.git
+    ./configure.sh
 
-# Fetch code dependencies
-go get github.com/gin-gonic/gin github.com/olivere/elastic
-```
-3. Install tools if necessary
+Build project:
 
-```
-npm install --global pegjs babel-cli sass
-```
+    ./build.sh
+
 
 ## Build
 * golang
