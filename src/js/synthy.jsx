@@ -1068,12 +1068,10 @@ var QueryBuilder = React.createClass({
 		return '@' + this.state.scope + '  ' + query;
 	},
 	parseQueryGroups: function(result) {
-		if (!$.isEmptyObject(result)) {
-			return result.rules.map(parseQueryObject)
-				.map(function(element, index) {
-					return {query: element, id: index}
-				})
-		}
+		return result.rules.map(parseQueryObject)
+			.map(function(element, index) {
+				return {query: element, id: index}
+			})
 	},
 	updateVenn: function() {
 		var regions = combinations(this.parseQueryGroups(this.state.rules));
