@@ -499,7 +499,7 @@ var QueryBuilderRule = React.createClass({
 							onClick={this.setComplement}
 							>
 							<input type="checkbox" name="onoffswitch" className="onoffswitch-checkbox"
-								checked={this.props.complement}
+								checked={this.props.complement} readOnly
 							/>
 							<label className="onoffswitch-label" for="onoffswitch">
 								<div className="onoffswitch-inner"></div>
