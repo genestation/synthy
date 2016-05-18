@@ -8,19 +8,19 @@
 root
 	= scope:scope _ top:top
 	{
-		return {nextKey: currKey, scope: scope, rules: top};
+		return {currKey: currKey, scope: scope, rules: top};
 	}
 	/ top:top _
 	{
-		return {nextKey: currKey, scope: null, rules: top};
+		return {currKey: currKey, scope: null, rules: top};
 	}
 	/ scope:scope _
 	{
-		return {nextKey: currKey, scope: scope, rules: null};
+		return {currKey: currKey, scope: scope, rules: null};
 	}
 	/ ''
 	{
-		return {nextKey: currKey, scope: null, rules:null};
+		return {currKey: currKey, scope: null, rules:null};
 	}
 top
 	= directive:directive
