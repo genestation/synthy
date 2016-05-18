@@ -300,18 +300,29 @@ var QueryBuilderRule = React.createClass({
 			value: this.props.value,
 			complement: this.props.complement,
 		});
-		$.get('/json/_count?query='+query, function(data) {
-			var count = data[0];
-			if(count === 0 && this.state.error.length === 0) {
-				this.setState({
-					error: "Empty set",
-				});
-			} else if (count > 0 && this.state.error === "Empty set") {
-				this.setState({
-					error: "",
-				});
-			};
-		}.bind(this));
+		var request = new XMLHttpRequest();
+		request.open(
+			'GET',
+			'/json/_count?query='+query,
+			true);
+		request.onload = function() {
+			if(request.status >= 200 && request.status < 400) {
+				var data = JSON.parse(request.responseText);
+				var count = data[0];
+				if(count === 0 && this.state.error.length === 0) {
+					console.log("Empty");
+					this.setState({
+						error: "Empty set",
+					});
+				} else if (count > 0 && this.state.error === "Empty set") {
+					console.log("Good");
+					this.setState({
+						error: "",
+					});
+				}
+			}
+		}.bind(this);
+		request.send();
 	},
 	deleteRule: function(event) {
 		this.props.deleteRule([this.props.index]);
@@ -377,19 +388,18 @@ var QueryBuilderRule = React.createClass({
 			});
 		} else {
 			var request = new XMLHttpRequest();
-			var that = this;
 			request.open(
 				'GET',
 				'/json/'+this.props.schema.scope+'/_suggest?query='+encodeURIComponent(query)+'&fields='+encodeURIComponent(this.props.field),
 				true);
-			request.onload = function(data) {
+			request.onload = function() {
 				if(request.status >= 200 && request.status < 400) {
 					var data = JSON.parse(request.responseText);
-					that.setState({
+					this.setState({
 						suggestions: data[0]
 					});
 				}
-			};
+			}.bind(this);
 			request.send();
 		}
 	},
@@ -1090,18 +1100,27 @@ var QueryBuilder = React.createClass({
 				query: query,
 			});
 		}
-		$.get('/json/_count?query='+queries.join("&query="), function(data) {
-			for(var index = 0; index < vennSet.length; index++) {
-				vennSet[index].size = data[index];
+		var request = new XMLHttpRequest();
+		request.open(
+			'GET',
+			'/json/_count?query='+queries.join("&query="),
+			true);
+		request.onload = function() {
+			if(request.status >= 200 && request.status < 400) {
+				var data = JSON.parse(request.responseText);
+				for(var index = 0; index < vennSet.length; index++) {
+					vennSet[index].size = data[index];
+				}
+				var zeroes = vennSet.filter(function(e){return e.sets.length === 1 && e.size === 0;})
+					.map(function(e){return e.sets[0]});
+				this.setState({
+					venn: vennSet.filter(function(e){
+						return intersect(e.sets,zeroes).length === 0;
+					})
+				});
 			}
-			var zeroes = vennSet.filter(function(e){return e.sets.length === 1 && e.size === 0;})
-				.map(function(e){return e.sets[0]});
-			this.setState({
-				venn: vennSet.filter(function(e){
-					return intersect(e.sets,zeroes).length === 0;
-				})
-			});
-		}.bind(this));
+		}.bind(this);
+		request.send();
 	},
 	setScope: function(scope) {
 		if(scope === null) {
