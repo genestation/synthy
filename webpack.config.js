@@ -30,11 +30,19 @@ module.exports = {
 	},
 	plugins: [
 		new ExtractTextPlugin("synthy.css"),
-		new webpack.DefinePlugin({
-			'process.env.NODE_ENV': '"production"'
-		}),
-		new webpack.optimize.UglifyJsPlugin(),
-		new webpack.optimize.OccurenceOrderPlugin(),
-		new webpack.optimize.DedupePlugin()
 	]
 };
+
+
+var production_plugins = [
+	new webpack.DefinePlugin({
+		'process.env.NODE_ENV': '"production"'
+	}),
+	new webpack.optimize.UglifyJsPlugin(),
+	new webpack.optimize.OccurenceOrderPlugin(),
+	new webpack.optimize.DedupePlugin()
+];
+
+if(process.argv.indexOf('--debug') == -1) {
+	module.exports.plugins.push(...production_plugins)
+}
