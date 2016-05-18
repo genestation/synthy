@@ -881,7 +881,6 @@ function getQueryParams(qs) {
 
     return params;
 }
-var urlQuery = getQueryParams(window.parent.document.location.search);
 function combinations(arr) {
 	var fn = function(active, rest, a) {
 		if (!active.length && !rest.length)
