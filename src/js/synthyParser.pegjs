@@ -234,6 +234,16 @@ rule
 			value: value
 		};
 	}
+	/ 'NOT' _ rule:rule
+	{
+		rule.complement = true
+		return rule;
+	}
+	/ 'NOT' _ directive:directive
+	{
+		directive.complement = true
+		return directive;
+	}
 	/ value:phrase _ field:field
 	{
 		return {
@@ -269,11 +279,6 @@ rule
 	/ '(' _ directive:directive _ ')'
 	{
 		directive.grouped = true
-		return directive;
-	}
-	/ 'NOT' _ directive:directive
-	{
-		directive.complement = true
 		return directive;
 	}
 	/ field:field
