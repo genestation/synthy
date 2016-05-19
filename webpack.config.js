@@ -4,10 +4,13 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
 	context: __dirname + "/src",
-	entry: './js/synthy.jsx',
+	entry: {
+		core: './js/synthy.jsx',
+		client: './js/client.js',
+	},
 	output: {
 		path: __dirname + '/dist',
-		filename: 'synthy.js',
+		filename: 'synthy.[name].js',
 		library: "Synthy",
 		libraryTarget: "var"
 	},
@@ -45,7 +48,7 @@ module.exports = {
 		]
 	},
 	plugins: [
-		new ExtractTextPlugin("synthy.css"),
+		new ExtractTextPlugin("synthy.[name].css"),
 	]
 };
 
