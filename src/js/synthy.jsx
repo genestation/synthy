@@ -310,12 +310,10 @@ var QueryBuilderRule = React.createClass({
 				var data = JSON.parse(request.responseText);
 				var count = data[0];
 				if(count === 0 && this.state.error.length === 0) {
-					console.log("Empty");
 					this.setState({
 						error: "Empty set",
 					});
 				} else if (count > 0 && this.state.error === "Empty set") {
-					console.log("Good");
 					this.setState({
 						error: "",
 					});
