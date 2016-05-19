@@ -1178,7 +1178,29 @@ var QueryBuilder = React.createClass({
 })
 
 export function init(element, options) {
-	document.addEventListener("DOMContentLoaded", function(event) {
+	var contentLoaded, messagePosted = false;
+
+	function render() {
 		ReactDOM.render(React.createElement(QueryBuilder, options), element);
+	}
+
+	function messageHandler(event) {
+		if(event.origin !== window.location.origin) return;
+
+		Object.assign(options, event.data);
+		window.removeEventListener("message", messageHandler);
+		messagePosted = true;
+		if(contentLoaded && messagePosted) {
+			render();
+		}
+	};
+
+	document.addEventListener("DOMContentLoaded", function(event) {
+		contentLoaded = true;
+		if(contentLoaded && messagePosted) {
+			render();
+		}
 	});
+
+	window.addEventListener("message", messageHandler);
 }
