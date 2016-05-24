@@ -4,6 +4,15 @@
   "description": "Synthesis and Test of Hypotheses",
   "author": "Mara Kim <mara.kim@vanderbilt.edu>",
   "license": "GPL-3.0",
+  "repository" : {
+    "type": "git",
+    "url": "git@code.rokaslab.org:mara/synthy.git"
+  },
+  "scripts": {
+    "prepublish": "webpack",
+    "build": "webpack",
+    "build:debug": "webpack --debug"
+  },
   "devDependencies": {
     "babel-core": "~6.7.4",
     "babel-loader": "~6.2.4",
