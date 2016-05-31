@@ -1106,25 +1106,14 @@ var QueryBuilder = React.createClass({
 		if (query === undefined) {
 			query = parseQueryObject(this.state.rules);
 		}
-		if(typeof action.action === 'boolean') {
-			if(action.hasOwnProperty("format") && typeof action.format=== 'boolean' && action.format
-				|| action.hasOwnProperty("fields") && typeof action.fields === 'boolean' && action.fields) {
-				// Display dialog
-				this.setState({
-					currAction: action,
-				});
-			} else {
-				this.performAction(action);
-			}
+		if(action.hasOwnProperty("format") && typeof action.format=== 'boolean' && action.format
+			|| action.hasOwnProperty("fields") && typeof action.fields === 'boolean' && action.fields) {
+			// Display dialog
+			this.setState({
+				currAction: action,
+			});
 		} else {
-			var urlquery = encodeURIComponent(
-				this.scopeQuery(query)
-			);
-			if(!window.parent.history.state || window.parent.history.state.query != query) {
-				window.parent.history.pushState({query:query}, "",
-					window.parent.location.pathname +"?" + this.props.queryVar + "=" + urlquery);
-			}
-			window.parent.location.href = action.action + urlquery;
+			this.performAction(action);
 		}
 	},
 	cancelAction: function() {
@@ -1134,36 +1123,33 @@ var QueryBuilder = React.createClass({
 	},
 	performAction: function(action, format, fields) {
 		let query = parseQueryObject(this.state.rules);
-		var url = encodeURIComponent(this.scopeQuery(query));
+		var queryString = this.props.queryVar + "=" + encodeURIComponent(this.scopeQuery(query));
+		if(!window.parent.history.state || window.parent.history.state.query != query) {
+			window.parent.history.pushState({query:query}, "",
+				window.parent.location.pathname +"?" + queryString);
+		}
 		for(var key in action.options) {
 			if(!action.options.hasOwnProperty(key)) continue;
 
 			var value = action.options[key];
 			if(typeof value === 'string') {
-				url += "&" + key + "=" + encodeURIComponent(value);
+				queryString += "&" + key + "=" + encodeURIComponent(value);
 			} else if (Array.isArray(value)) {
-				url += "&" + key + "=" + encodeURIComponent(value.join(','));
+				queryString += "&" + key + "=" + encodeURIComponent(value.join(','));
 			}
 		}
 		if(format) {
-			url += "&format=" + encodeURIComponent(format);
+			queryString += "&format=" + encodeURIComponent(format);
 		}
 		if(fields) {
-			url += "&fields=" + encodeURIComponent(fields.join(','));
+			queryString += "&fields=" + fields.map(item => encodeURIComponent(item)).join('&fields=');
 		}
+		let url = "/json/_search?" + queryString;
 		if(typeof action.action == 'boolean' && action.action) {
-			url = "/json/_search?query=" + url;
 			window.parent.postMessage({label: action.label, url:url, query:query, format: format, fields: fields},window.location.origin);
 		} else {
-			// TODO refine
-			var urlquery = encodeURIComponent(
-				this.scopeQuery(query)
-			);
-			if(!window.parent.history.state || window.parent.history.state.query != query) {
-				window.parent.history.pushState({query:query}, "",
-					window.parent.location.pathname +"?" + this.props.queryVar + "=" + urlquery);
-			}
-			window.parent.location.href = action.action + urlquery;
+			queryString += "&url=" + encodeURIComponent(url);
+			window.parent.location.href = action.action + "?" + queryString;
 		}
 	},
 	scopeQuery: function(query) {
