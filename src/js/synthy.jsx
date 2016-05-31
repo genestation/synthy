@@ -4,6 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
 import {SimpleSelect} from 'react-selectize';
+import Modal from 'react-modal';
 import d3 from 'd3';
 import venn from 'venn.js';
 import {iframeResizerContentWindow} from 'iframe-resizer';
@@ -962,6 +963,85 @@ function parseQueryObject(result, root) {
 	}
 }
 
+var ActionModal = React.createClass({
+	getInitialState: function() {
+		return {
+			format: "json",
+			fields: [],
+		};
+	},
+	performAction: function() {
+		this.props.onSubmit(this.props.action, this.state.format, this.state.fields);
+	},
+	cancel: function() {
+		this.setState(this.getInitialState());
+		this.props.onCancel();
+	},
+	formatChange: function(e) {
+		this.setState({
+			format: e.target.value,
+		});
+	},
+	fieldChange: function(idx,value) {
+		let fields = this.state.fields;
+		fields[idx] = value.value;
+		this.setState({
+			fields: fields,
+		});
+	},
+	addField: function() {
+		let fields = this.state.fields;
+		fields.push(null);
+		this.setState({
+			fields: fields,
+		});
+	},
+	renderFormat: function() {
+		return <div>
+			<input type="radio" name="format"
+				value="json" checked={this.state.format=="json"}
+				onChange={this.formatChange} />JSON
+			<input type="radio" name="format"
+				value="tab" checked={this.state.format=="tab"}
+				onChange={this.formatChange} />TAB
+		</div>;
+	},
+	renderFields: function() {
+		return <div>
+			{this.state.fields.map((item, idx) => {
+				return <SimpleSelect key={idx}
+					value={item?{label:item,value:item}:null}
+					options={this.props.fieldArray}
+					onValueChange={this.fieldChange.bind(null,idx)}
+					hideResetButton={true}
+				/>
+			})}
+			<button type="button" className="btn btn-xs btn-default"
+				onClick={this.addField}>
+				<i className="glyphicon glyphicon-plus"></i>
+				&nbsp;Field
+			</button>
+		</div>;
+	},
+	render: function() {
+		return <Modal
+					isOpen={this.props.action != null}
+					onRequestClose={this.cancel}
+				>
+				{this.props.action && this.props.action.format?this.renderFormat():null}
+				{this.props.action && this.props.action.fields?this.renderFields():null}
+				<button className={"btn btn-primary"}
+					onClick={this.performAction}>
+					{this.props.action?this.props.action.label:null}
+				</button>
+				<button className={"btn btn-default"}
+					onClick={this.cancel}>
+					Cancel
+				</button>
+			</Modal>;
+	}
+});
+
 var QueryBuilder = React.createClass({
 	currKey: 0,
 	nextKey: function() {
@@ -1026,31 +1106,16 @@ var QueryBuilder = React.createClass({
 		if (query === undefined) {
 			query = parseQueryObject(this.state.rules);
 		}
-		if(typeof action === 'function') {
-			action(query);
-		} else if(typeof action === 'object') {
-			if(action.hasOwnProperty("format")) {
-				if(typeof action.format === 'boolean') {
-					// TODO display dialog
-				}
+		if(typeof action.action === 'boolean') {
+			if(action.hasOwnProperty("format") && typeof action.format=== 'boolean' && action.format
+				|| action.hasOwnProperty("fields") && typeof action.fields === 'boolean' && action.fields) {
+				// Display dialog
+				this.setState({
+					currAction: action,
+				});
+			} else {
+				this.performAction(action);
 			}
-			if(action.hasOwnProperty("fields")) {
-				if(typeof action.fields === 'boolean') {
-					// TODO display dialog
-				}
-			}
-			var url = "/json/_search?query=" + encodeURIComponent(this.scopeQuery(query));
-			for(var key in action.options) {
-				if(!action.options.hasOwnProperty(key)) continue;
-
-				var value = action.options[key];
-				if(typeof value === 'string') {
-					url += "&" + key + "=" + encodeURIComponent(value);
-				} else if (Array.isArray(value)) {
-					url += "&" + key + "=" + encodeURIComponent(value.join(','));
-				}
-			}
-			action.callback(url);
 		} else {
 			var urlquery = encodeURIComponent(
 				this.scopeQuery(query)
@@ -1059,7 +1124,46 @@ var QueryBuilder = React.createClass({
 				window.parent.history.pushState({query:query}, "",
 					window.parent.location.pathname +"?" + this.props.queryVar + "=" + urlquery);
 			}
-			window.parent.location.href = action + urlquery;
+			window.parent.location.href = action.action + urlquery;
+		}
+	},
+	cancelAction: function() {
+		this.setState({
+			currAction: null,
+		});
+	},
+	performAction: function(action, format, fields) {
+		let query = parseQueryObject(this.state.rules);
+		var url = encodeURIComponent(this.scopeQuery(query));
+		for(var key in action.options) {
+			if(!action.options.hasOwnProperty(key)) continue;
+
+			var value = action.options[key];
+			if(typeof value === 'string') {
+				url += "&" + key + "=" + encodeURIComponent(value);
+			} else if (Array.isArray(value)) {
+				url += "&" + key + "=" + encodeURIComponent(value.join(','));
+			}
+		}
+		if(format) {
+			url += "&format=" + encodeURIComponent(format);
+		}
+		if(fields) {
+			url += "&fields=" + encodeURIComponent(fields.join(','));
+		}
+		if(typeof action.action == 'boolean' && action.action) {
+			url = "/json/_search?query=" + url;
+			window.parent.postMessage({label: action.label, url:url, query:query},window.location.origin);
+		} else {
+			// TODO refine
+			var urlquery = encodeURIComponent(
+				this.scopeQuery(query)
+			);
+			if(!window.parent.history.state || window.parent.history.state.query != query) {
+				window.parent.history.pushState({query:query}, "",
+					window.parent.location.pathname +"?" + this.props.queryVar + "=" + urlquery);
+			}
+			window.parent.location.href = action.action + urlquery;
 		}
 	},
 	scopeQuery: function(query) {
@@ -1141,6 +1245,16 @@ var QueryBuilder = React.createClass({
 	},
 	render: function() {
 		var self = this;
+		var fieldArray = []
+		this.props.filters.forEach(function(filter) {
+			if(!filter.label) {
+				filter.label = filter.field;
+			}
+			fieldArray.push({
+				value: filter.field,
+				label: filter.label,
+			});
+		},this);
 		return (
 			<div className="query-builder-container">
 				<SimpleSelect value={{label:this.state.scope,value:this.state.scope}}
@@ -1153,7 +1267,7 @@ var QueryBuilder = React.createClass({
 						return (d.query.length?d.query:d.label) + "<br>" + d.size + " hits";
 					}}
 					onClick={function(d,i) {
-						this.submitQuery(this.props.actions[0].action, d.query);
+						this.submitQuery(this.props.actions[0], d.query);
 					}.bind(this)}
 				/>
 				<QueryBuilderCore ref="builder"
@@ -1167,11 +1281,17 @@ var QueryBuilder = React.createClass({
 				{this.props.actions.map(function(item,idx) {
 					return (
 						<button key={idx} className={"btn "+item.style}
-							onClick={this.submitQuery.bind(null, item.action, undefined)}>
+							onClick={this.submitQuery.bind(null, item, undefined)}>
 							{item.label}
 						</button>
 					)
 				},this)}
+				<ActionModal
+					action={this.state.currAction}
+					onCancel={this.cancelAction}
+					onSubmit={this.performAction}
+					fieldArray={fieldArray}
+				/>
 			</div>
 		);
 	}
