@@ -1153,7 +1153,7 @@ var QueryBuilder = React.createClass({
 		}
 		if(typeof action.action == 'boolean' && action.action) {
 			url = "/json/_search?query=" + url;
-			window.parent.postMessage({label: action.label, url:url, query:query},window.location.origin);
+			window.parent.postMessage({label: action.label, url:url, query:query, format: format, fields: fields},window.location.origin);
 		} else {
 			// TODO refine
 			var urlquery = encodeURIComponent(

@@ -25,7 +25,7 @@ export function init(element, options) {
 		if(event.origin !== window.location.origin) return;
 
 		if(actions.hasOwnProperty(event.data.label)) {
-			actions[event.data.label](event.data.url, event.data.query);
+			actions[event.data.label](event.data);
 		};
 	});
 
