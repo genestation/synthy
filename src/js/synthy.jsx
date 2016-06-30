@@ -1032,8 +1032,8 @@ var ActionModal = React.createClass({
 					<Modal.Title>{this.props.action && this.props.action.label}</Modal.Title>
 				</Modal.Header>
 				<Modal.Body>
-					{this.props.action && this.props.action.format?this.renderFormat():null}
-					{this.props.action && this.props.action.fields?this.renderFields():null}
+					{this.props.action && this.props.action.dialog && this.props.action.dialog.format?this.renderFormat():null}
+					{this.props.action && this.props.action.dialog && this.props.action.dialog.fields?this.renderFields():null}
 				</Modal.Body>
 				<Modal.Footer>
 					<Button bsStyle="primary"
@@ -1113,8 +1113,7 @@ var QueryBuilder = React.createClass({
 		if (query === undefined) {
 			query = parseQueryObject(this.state.rules);
 		}
-		if(action.hasOwnProperty("format") && typeof action.format=== 'boolean' && action.format
-			|| action.hasOwnProperty("fields") && typeof action.fields === 'boolean' && action.fields) {
+		if(action.hasOwnProperty("dialog") && (action.dialog.format || action.dialog.fields) ) {
 			// Display dialog
 			this.setState({
 				currAction: action,
@@ -1142,7 +1141,7 @@ var QueryBuilder = React.createClass({
 			if(typeof value === 'string') {
 				queryString += "&" + key + "=" + encodeURIComponent(value);
 			} else if (Array.isArray(value)) {
-				queryString += "&" + key + "=" + encodeURIComponent(value.join(','));
+				queryString += "&" + key + "=" + value.map(item => encodeURIComponent(item)).join('&' + key + '=');
 			}
 		}
 		if(format) {
@@ -1152,6 +1151,12 @@ var QueryBuilder = React.createClass({
 			queryString += "&fields=" + fields.map(item => encodeURIComponent(item)).join('&fields=');
 		}
 		let url = "/json/_search?" + queryString;
+		if(action.format) {
+			url += "&format=" + encodeURIComponent(action.format);
+		}
+		if(action.fields) {
+			url += "&fields=" + action.fields.map(item => encodeURIComponent(item)).join('&fields=');
+		}
 		if(typeof action.action == 'boolean' && action.action) {
 			window.parent.postMessage({label: action.label, url:url, query:query, format: format, fields: fields},window.location.origin);
 		} else {
