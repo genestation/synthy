@@ -4,7 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
 import {SimpleSelect} from 'react-selectize';
-import Modal from 'react-modal';
+import {Button, Modal} from 'react-bootstrap';
 import d3 from 'd3';
 import venn from 'venn.js';
 import {iframeResizerContentWindow} from 'iframe-resizer';
@@ -967,7 +967,7 @@ var ActionModal = React.createClass({
 	getInitialState: function() {
 		return {
 			format: "json",
-			fields: [],
+			fields: [""],
 		};
 	},
 	performAction: function() {
@@ -1016,28 +1016,35 @@ var ActionModal = React.createClass({
 					hideResetButton={true}
 				/>
 			})}
-			<button type="button" className="btn btn-xs btn-default"
+			<Button bsSize="xs" bsStyle="default"
 				onClick={this.addField}>
 				<i className="glyphicon glyphicon-plus"></i>
 				&nbsp;Field
-			</button>
+			</Button>
 		</div>;
 	},
 	render: function() {
 		return <Modal
-					isOpen={this.props.action != null}
-					onRequestClose={this.cancel}
+					show={this.props.action != null}
+					onHide={this.cancel}
 				>
-				{this.props.action && this.props.action.format?this.renderFormat():null}
-				{this.props.action && this.props.action.fields?this.renderFields():null}
-				<button className={"btn btn-primary"}
-					onClick={this.performAction}>
-					{this.props.action?this.props.action.label:null}
-				</button>
-				<button className={"btn btn-default"}
-					onClick={this.cancel}>
-					Cancel
-				</button>
+				<Modal.Header>
+					<Modal.Title>{this.props.action && this.props.action.label}</Modal.Title>
+				</Modal.Header>
+				<Modal.Body>
+					{this.props.action && this.props.action.format?this.renderFormat():null}
+					{this.props.action && this.props.action.fields?this.renderFields():null}
+				</Modal.Body>
+				<Modal.Footer>
+					<Button bsStyle="primary"
+						onClick={this.performAction}>
+						{this.props.action?this.props.action.label:null}
+					</Button>
+					<Button bsStyle="default"
+						onClick={this.cancel}>
+						Cancel
+					</Button>
+				</Modal.Footer>
 			</Modal>;
 	}
 });
