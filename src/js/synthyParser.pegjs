@@ -59,7 +59,7 @@ directive
 	}
 
 disjunction
-	= head:conjunction ( _ 'OR' _ tail:conjunction)+
+	= head:conjunction tail:( _ 'OR' _ conjunction)+
 	{
 		head.id = nextKey();
 		return [head].concat(tail.map(function(e){var rule = e[e.length-1]; rule.id = nextKey(); return rule;}));
