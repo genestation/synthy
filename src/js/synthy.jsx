@@ -4,7 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
 import {SimpleSelect} from 'react-selectize';
-import {Button, Modal} from 'react-bootstrap';
+import {Button, Modal, Checkbox} from 'react-bootstrap';
 import d3 from 'd3';
 import venn from 'venn.js';
 import {iframeResizerContentWindow} from 'iframe-resizer';
@@ -968,10 +968,11 @@ var ActionModal = React.createClass({
 		return {
 			format: "json",
 			fields: [""],
+			pretty: true,
 		};
 	},
 	performAction: function() {
-		this.props.onSubmit(this.props.action, this.state.format, this.state.fields);
+		this.props.onSubmit(this.props.action, this.state.format, this.state.fields, this.state.pretty);
 	},
 	cancel: function() {
 		this.setState(this.getInitialState());
@@ -987,6 +988,11 @@ var ActionModal = React.createClass({
 		fields[idx] = value.value;
 		this.setState({
 			fields: fields,
+		});
+	},
+	prettyChange: function(e) {
+		this.setState({
+			pretty: e.target.value,
 		});
 	},
 	addField: function() {
@@ -1023,6 +1029,13 @@ var ActionModal = React.createClass({
 			</Button>
 		</div>;
 	},
+	renderPretty: function() {
+		return <div>
+			<Checkbox checked={this.state.pretty} onChange={this.prettyChange} >
+				Pretty
+			</Checkbox>
+		</div>;
+	},
 	render: function() {
 		return <Modal
 					show={this.props.action != null}
@@ -1034,6 +1047,8 @@ var ActionModal = React.createClass({
 				<Modal.Body>
 					{this.props.action && this.props.action.dialog && this.props.action.dialog.format?this.renderFormat():null}
 					{this.props.action && this.props.action.dialog && this.props.action.dialog.fields?this.renderFields():null}
+					{this.props.action && this.props.action.dialog && this.props.action.dialog.format
+						&& this.state.format=="json" && this.props.action.dialog.pretty?this.renderPretty():null}
 				</Modal.Body>
 				<Modal.Footer>
 					<Button bsStyle="primary"
@@ -1127,7 +1142,7 @@ var QueryBuilder = React.createClass({
 			currAction: null,
 		});
 	},
-	performAction: function(action, format, fields) {
+	performAction: function(action, format, fields, pretty) {
 		let query = parseQueryObject(this.state.rules);
 		var queryString = this.props.queryVar + "=" + encodeURIComponent(this.scopeQuery(query));
 		if(!window.parent.history.state || window.parent.history.state.query != query) {
@@ -1143,6 +1158,9 @@ var QueryBuilder = React.createClass({
 			} else if (Array.isArray(value)) {
 				queryString += "&" + key + "=" + value.map(item => encodeURIComponent(item)).join('&' + key + '=');
 			}
+		}
+		if(pretty && (!format || format == "json")) {
+			queryString += "&pretty";
 		}
 		if(format) {
 			queryString += "&format=" + encodeURIComponent(format);
