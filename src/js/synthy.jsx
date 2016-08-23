@@ -4,7 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
 import {SimpleSelect} from 'react-selectize';
-import {Button, Modal, Checkbox} from 'react-bootstrap';
+import {Button, Modal, Checkbox, FormGroup, Radio} from 'react-bootstrap';
 import d3 from 'd3';
 import venn from 'venn.js';
 import {iframeResizerContentWindow} from 'iframe-resizer';
@@ -1003,14 +1003,18 @@ var ActionModal = React.createClass({
 		});
 	},
 	renderFormat: function() {
-		return <div>
-			<input type="radio" name="format"
-				value="json" checked={this.state.format=="json"}
-				onChange={this.formatChange} />JSON
-			<input type="radio" name="format"
-				value="tab" checked={this.state.format=="tab"}
-				onChange={this.formatChange} />TAB
-		</div>;
+		return <FormGroup>
+			<Radio inline value="json"
+				checked={this.state.format=="json"}
+				onChange={this.formatChange}>
+				JSON
+			</Radio>
+			<Radio inline value="tab"
+				checked={this.state.format=="tab"}
+				onChange={this.formatChange}>
+				TAB
+			</Radio>
+		</FormGroup>;
 	},
 	renderFields: function() {
 		return <div>
