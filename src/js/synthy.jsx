@@ -405,6 +405,18 @@ var QueryBuilderRule = React.createClass({
 	onSuggestionUpdateRequested: function({value}) {
 		this.updateSuggestions(value);
 	},
+	fieldElement: function() {
+		let self = this;
+		return (
+			<div className="rule-filter-container col-sm-3">
+				<SimpleSelect value={{label:this.props.field,value:this.props.field}}
+					options={this.props.schema.fieldArray}
+					onValueChange={function({value}={value:""}){self.setField(value);}}
+					hideResetButton={true}
+				/>
+			</div>
+		);
+	},
 	valueElement: function() {
 		if(!this.props.field || !this.props.operator) {
 			return;
@@ -517,13 +529,7 @@ var QueryBuilderRule = React.createClass({
 					{this.state.error}
 				</div>
 				<div className="rule-components row">
-					<div className="rule-filter-container col-sm-3">
-						<SimpleSelect value={{label:this.props.field,value:this.props.field}}
-							options={this.props.schema.fieldArray}
-							onValueChange={function({value}={value:""}){self.setField(value);}}
-							hideResetButton={true}
-						/>
-					</div>
+					{this.fieldElement()}
 					{this.operatorElement()}
 					{this.valueElement()}
 				</div>
