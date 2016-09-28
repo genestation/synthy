@@ -1274,7 +1274,7 @@ var QueryBuilder = React.createClass({
 		var fieldArray = []
 		this.props.filters.forEach(function(filter) {
 			if(!filter.label) {
-				filter.label = filter.field;
+				filter.label = filter.field.split('.').slice(-1)[0]; // Split label by dots, then use last elem
 			}
 			fieldArray.push({
 				value: filter.field,
