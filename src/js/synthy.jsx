@@ -409,11 +409,30 @@ var QueryBuilderRule = React.createClass({
 		let self = this;
 		return (
 			<div className="rule-filter-container col-sm-3">
-				<SimpleSelect value={{label:this.props.field,value:this.props.field}}
-					options={this.props.schema.fieldArray}
-					onValueChange={function({value}={value:""}){self.setField(value);}}
-					hideResetButton={true}
-				/>
+				{this.props.field.split('.').map((elem, idx, path) => {
+					let field = path.slice(0,idx).join('.');
+					return (
+						<SimpleSelect value={{label:elem,value:field}}
+							options={this.props.schema.fieldArray.filter((elem) => {
+								let path = elem.value.split('.');
+								return path.slice(0,idx).join('.') == field
+									&& path.length == idx+1;
+							})}
+							onValueChange={function({value}={value:""}){self.setField(value);}}
+							hideResetButton={true}
+						/>
+					)
+				})}
+				{this.props.schema.fieldArray.findIndex((elem) => {return elem.value.startsWith(this.props.field + '.');}) > -1?
+					<SimpleSelect value={{label:'-',value:this.props.field}}
+						options={this.props.schema.fieldArray.filter((elem) => {
+							return elem.value.startsWith(this.props.field + '.')
+								&& elem.value.split('.').length == this.props.field.split('.').length + 1;
+						})}
+						onValueChange={function({value}={value:""}){self.setField(value);}}
+						hideResetButton={true}
+					/>:null
+				}
 			</div>
 		);
 	},
