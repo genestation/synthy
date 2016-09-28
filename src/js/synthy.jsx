@@ -411,13 +411,17 @@ var QueryBuilderRule = React.createClass({
 			<div className="rule-filter-container col-sm-3">
 				{this.props.field.split('.').map((elem, idx, path) => {
 					let field = path.slice(0,idx).join('.');
+					let options=this.props.schema.fieldArray.filter((elem) => {
+						let path = elem.value.split('.');
+						return path.slice(0,idx).join('.') == field
+							&& path.length == idx+1;
+					});
+					if(idx > 0) {
+						options.unshift({label:'-', value:field});
+					}
 					return (
 						<SimpleSelect value={{label:elem,value:field}}
-							options={this.props.schema.fieldArray.filter((elem) => {
-								let path = elem.value.split('.');
-								return path.slice(0,idx).join('.') == field
-									&& path.length == idx+1;
-							})}
+							options={options}
 							onValueChange={function({value}={value:""}){self.setField(value);}}
 							hideResetButton={true}
 						/>
@@ -428,7 +432,7 @@ var QueryBuilderRule = React.createClass({
 						options={this.props.schema.fieldArray.filter((elem) => {
 							return elem.value.startsWith(this.props.field + '.')
 								&& elem.value.split('.').length == this.props.field.split('.').length + 1;
-						})}
+						}) /*.unshift({label:'-',value:this.props.field})*/ }
 						onValueChange={function({value}={value:""}){self.setField(value);}}
 						hideResetButton={true}
 					/>:null
