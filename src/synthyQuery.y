@@ -9,8 +9,7 @@ import (
 	"unicode"
 	"strings"
 	"strconv"
-
-	"gopkg.in/olivere/elastic.v3"
+	"github.com/olivere/elastic"
 )
 
 type numstring struct {
@@ -18,9 +17,43 @@ type numstring struct {
 	String string
 }
 
+type dbxref struct {
+	Db string
+	Accession string
+	Context string
+}
+
+type conjunction struct {
+	Queries []elastic.Query
+	Filters []elastic.Filter
+}
+
 type field struct {
 	Meta elasticField
 	Context []string
+}
+
+type filterFactory func(field string) elastic.Filter
+func createFilter(field field, factory filterFactory) elastic.Filter {
+	var filter elastic.Filter
+	if len(field.Meta.Closure) == 1 {
+		filter = factory(field.Meta.Closure[0])
+	} else {
+		filter = elastic.NewOrFilter()
+		for _,item := range field.Meta.Closure {
+			filter = filter.(elastic.OrFilter).Add(factory(item))
+		}
+	}
+	if len(field.Meta.Nest) > 0 {
+		i := len(field.Meta.Nest)-1
+		last := elastic.NewNestedFilter(field.Meta.Nest[i]).Filter(filter)
+		for i--; i >= 0; i-- {
+			last = elastic.NewNestedFilter(field.Meta.Nest[i]).Filter(last)
+		}
+		return last
+	} else {
+		return filter
+	}
 }
 
 type queryFactory func(field string) elastic.Query
@@ -31,14 +64,14 @@ func createQuery(field field, factory queryFactory) elastic.Query {
 	} else {
 		query = elastic.NewBoolQuery()
 		for _,item := range field.Meta.Closure {
-			query = query.(*elastic.BoolQuery).Should(factory(item))
+			query = query.(elastic.BoolQuery).Should(factory(item))
 		}
 	}
 	if len(field.Meta.Nest) > 0 {
 		i := len(field.Meta.Nest)-1
-		last := elastic.NewNestedQuery(field.Meta.Nest[i],query)
+		last := elastic.NewNestedQuery(field.Meta.Nest[i]).Query(query)
 		for i--; i >= 0; i-- {
-			last = elastic.NewNestedQuery(field.Meta.Nest[i],last)
+			last = elastic.NewNestedQuery(field.Meta.Nest[i]).Query(last)
 		}
 		return last
 	} else {
@@ -53,9 +86,11 @@ func createQuery(field field, factory queryFactory) elastic.Query {
 	nest []string
 	field field
 	num numstring
+	dbxref dbxref
 	query elastic.Query
+	filter elastic.Filter
 	scope elasticScope
-	conjunction []elastic.Query
+	conjunction conjunction
 	disjunction []elastic.Query
 }
 
@@ -63,6 +98,7 @@ func createQuery(field field, factory queryFactory) elastic.Query {
 %type	<field>	field
 %type	<scope> scope
 %type	<query> query directive
+%type	<filter> filter
 %type	<conjunction> conjunction
 %type	<disjunction> disjunction
 
@@ -75,6 +111,7 @@ func createQuery(field field, factory queryFactory) elastic.Query {
 %token	<word>	WORD SCOPE
 %token	<nest> NEST
 %token	<field>	FIELD
+%token	<dbxref> DBXREF
 %token	ERROR
 
 %%
@@ -120,129 +157,171 @@ directive:
 disjunction:
 	conjunction
 	{
-		if len($1) > 1 {
-			$$ = append($$, elastic.NewBoolQuery().Must($1...))
-		} else if len($1) > 0 {
-			$$ = append($$, $1[0])
+		var q elastic.Query
+		var f elastic.Filter
+		if len($1.Queries) > 1 {
+			q = elastic.NewBoolQuery().Must($1.Queries...)
+		} else if len($1.Queries) > 0 {
+			q = $1.Queries[0]
+		}
+		if len($1.Filters) > 1 {
+			f = elastic.NewAndFilter($1.Filters...)
+		} else if len($1.Filters) > 0 {
+			f = $1.Filters[0]
+		}
+		if len($1.Queries) == 0 {
+			$$ = append($$,elastic.NewFilteredQuery(elastic.NewMatchAllQuery()).Filter(f))
+		} else if len($1.Filters) == 0 {
+			$$ = append($$,q)
 		} else {
-			$$ = append($$,elastic.NewMatchAllQuery())
+			$$ = append($$,
+				elastic.NewFilteredQuery(q).Filter(f),
+			)
 		}
 	}
 |	disjunction OR conjunction
 	{
-		if len($3) > 1 {
-			$$ = append($1, elastic.NewBoolQuery().Must($3...))
-		} else if len($3) > 0 {
-			$$ = append($1, $3[0])
+		var q elastic.Query
+		var f elastic.Filter
+		if len($3.Queries) > 1 {
+			q = elastic.NewBoolQuery().Must($3.Queries...)
+		} else if len($3.Queries) > 0 {
+			q = $3.Queries[0]
+		}
+		if len($3.Filters) > 1 {
+			f = elastic.NewAndFilter($3.Filters...)
+		} else if len($3.Filters) > 0 {
+			f = $3.Filters[0]
+		}
+		if len($3.Queries) == 0 {
+			$$ = append($1,elastic.NewFilteredQuery(elastic.NewMatchAllQuery()).Filter(f))
+		} else if len($3.Filters) == 0 {
+			$$ = append($1,q)
 		} else {
-			$$ = append($1,elastic.NewMatchAllQuery())
+			$$ = append($1,
+				elastic.NewFilteredQuery(q).Filter(f),
+			)
 		}
 	}
 
 conjunction:
-	query
+	filter
 	{
-		$$ = append($$,$1)
+		$$.Filters = append($$.Filters,$1)
+	}
+|	query
+	{
+		$$.Queries = append($$.Queries,$1)
+	}
+|	conjunction AND filter
+	{
+		$$.Filters = append($1.Filters,$3)
 	}
 |	conjunction AND query
 	{
-		$$ = append($1,$3)
+		$$.Queries = append($1.Queries,$3)
 	}
 
-query:
+filter:
 	/* empty */
 	{
-		$$ = elastic.NewMatchAllQuery();
+		$$ = elastic.NewMatchAllFilter();
 	}
 |	field
 	{
-		$$ = createQuery($1, func(field string) elastic.Query {
-			return elastic.NewExistsQuery(field);
+		$$ = createFilter($1, func(field string) elastic.Filter {
+			return elastic.NewExistsFilter(field);
 		})
 	}
 |	field EQ NUM
 	{
-		$$ = createQuery($1, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).
+		$$ = createFilter($1, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).
 				From($3.Num).To($3.Num).
 				IncludeLower(true).IncludeUpper(true)
 		})
 	}
 |	field NE NUM
 	{
-		$$ = createQuery($1, func(field string) elastic.Query {
-			return elastic.NewBoolQuery().Should(
-				elastic.NewRangeQuery(field).Gt($3.Num),
-				elastic.NewRangeQuery(field).Lt($3.Num),
+		$$ = createFilter($1, func(field string) elastic.Filter {
+			return elastic.NewOrFilter(
+				elastic.NewRangeFilter(field).Gt($3.Num),
+				elastic.NewRangeFilter(field).Lt($3.Num),
 			)
 		})
 	}
 |	field GT NUM
 	{
-		$$ = createQuery($1, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).Gt($3.Num)
+		$$ = createFilter($1, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).Gt($3.Num)
 		})
 	}
 |	field GE NUM
 	{
-		$$ = createQuery($1, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).Gte($3.Num)
+		$$ = createFilter($1, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).Gte($3.Num)
 		})
 	}
 |	field LT NUM
 	{
-		$$ = createQuery($1, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).Lt($3.Num)
+		$$ = createFilter($1, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).Lt($3.Num)
 		})
 	}
 |	field LE NUM
 	{
-		$$ = createQuery($1, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).Lte($3.Num)
+		$$ = createFilter($1, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).Lte($3.Num)
 		})
 	}
 |	NUM EQ field
 	{
-		$$ = createQuery($3, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).
+		$$ = createFilter($3, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).
 				From($1.Num).To($1.Num).
 				IncludeLower(true).IncludeUpper(true)
 		})
 	}
 |	NUM NE field
 	{
-		$$ = createQuery($3, func(field string) elastic.Query {
-			return elastic.NewBoolQuery().Should(
-				elastic.NewRangeQuery(field).Gt($1.Num),
-				elastic.NewRangeQuery(field).Lt($1.Num),
+		$$ = createFilter($3, func(field string) elastic.Filter {
+			return elastic.NewOrFilter(
+				elastic.NewRangeFilter(field).Gt($1.Num),
+				elastic.NewRangeFilter(field).Lt($1.Num),
 			)
 		})
 	}
 |	NUM GT field
 	{
-		$$ = createQuery($3, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).Lt($1.Num)
+		$$ = createFilter($3, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).Lt($1.Num)
 		})
 	}
 |	NUM GE field
 	{
-		$$ = createQuery($3, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).Lte($1.Num)
+		$$ = createFilter($3, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).Lte($1.Num)
 		})
 	}
 |	NUM LT field
 	{
-		$$ = createQuery($3, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).Gt($1.Num)
+		$$ = createFilter($3, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).Gt($1.Num)
 		})
 	}
 |	NUM LE field
 	{
-		$$ = createQuery($3, func(field string) elastic.Query {
-			return elastic.NewRangeQuery(field).Gte($1.Num)
+		$$ = createFilter($3, func(field string) elastic.Filter {
+			return elastic.NewRangeFilter(field).Gte($1.Num)
 		})
 	}
-|	word
+|	NOT filter
+	{
+		$$ = elastic.NewNotFilter($2)
+	}
+
+query:
+	word
 	{
 		if strings.ContainsAny($1,"*?") {
 			$$ = elastic.NewWildcardQuery("_all",$1)
@@ -321,6 +400,29 @@ query:
 			}
 		})
 	}
+|	DBXREF
+	{
+		path := $1.Context
+		if !strings.HasSuffix(path,"dbxref") {
+			path += ".dbxref"
+		}
+		$$ = elastic.NewBoolQuery().Must(
+			elastic.NewTermQuery(path+".db",$1.Db),
+			elastic.NewTermQuery(path+".accession",$1.Accession),
+		)
+	}
+|	DBXREF field
+	{
+		$$ = createQuery($2, func(field string) elastic.Query {
+			if !strings.HasSuffix(field,"dbxref") {
+				field += ".dbxref"
+			}
+			return elastic.NewBoolQuery().Must(
+				elastic.NewTermQuery(field+".db",$1.Db),
+				elastic.NewTermQuery(field+".accession",$1.Accession),
+			)
+		})
+	}
 |	'(' directive ')'
 	{
 		$$ = $2
@@ -329,9 +431,9 @@ query:
 	{
 		if len($1) > 0 {
 			i := len($1)-1
-			last := elastic.NewNestedQuery($1[i],$2)
+			last := elastic.NewNestedQuery($1[i]).Query($2)
 			for i--; i >= 0; i-- {
-				last = elastic.NewNestedQuery($1[i],last)
+				last = elastic.NewNestedQuery($1[i]).Query(last)
 			}
 			$$ = last
 		} else {
@@ -594,32 +696,59 @@ func (x *synthyLex) scope(c rune, yylval *querySymType) int {
 
 // Lex a word.
 func (x *synthyLex) word(c rune, yylval *querySymType) int {
-	var b bytes.Buffer
+	var b,acc bytes.Buffer
 	x.add(&b, c)
+	state := 0
 	L: for {
 		c = x.next()
-		switch c {
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '.', '*', '?':
-			x.add(&b, c)
-		default:
-			if 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' {
+		switch state {
+		case 0:
+			switch c {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '.', '*', '?':
 				x.add(&b, c)
-			} else {
-				break L
+			case ':':
+				state = 1
+			default:
+				if 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' {
+					x.add(&b, c)
+				} else {
+					break L
+				}
+			}
+		case 1:
+			switch c {
+			case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '.', '*', '?':
+				x.add(&acc, c)
+			default:
+				if 'a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' {
+					x.add(&acc, c)
+				} else {
+					break L
+				}
 			}
 		}
 	}
 	x.unpeek(c)
-	switch b.String() {
-	case "AND":
-		return AND
-	case "OR":
-		return OR
-	case "NOT":
-		return NOT
+	switch state {
+	case 1:
+		yylval.dbxref.Db = strings.ToLower(b.String())
+		yylval.dbxref.Accession = strings.ToLower(acc.String())
+		if len(x.Context) > 0 {
+			yylval.dbxref.Context = x.Context[len(x.Context)-1]
+		}
+		return DBXREF
 	default:
-		yylval.word = strings.ToLower(b.String())
-		return WORD
+		switch b.String() {
+		case "AND":
+			return AND
+		case "OR":
+			return OR
+		case "NOT":
+			return NOT
+		default:
+			yylval.word = strings.ToLower(b.String())
+			return WORD
+		}
 	}
 }
 
