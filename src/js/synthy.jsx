@@ -52,7 +52,7 @@ var GraphSlider = React.createClass({
 			.clamp(true);
 		this.yScale = d3.scale.linear()
 			.domain([0,d3.max(this.props.buckets,function(bucket) {
-				return bucket.Count;
+				return bucket.count;
 			})])
 			.range([0,this.height]);
 
@@ -164,7 +164,7 @@ var GraphSlider = React.createClass({
 	componentDidUpdate: function() {
 		this.xScale.domain([this.props.min, this.props.max]);
 		this.yScale.domain([0,d3.max(this.props.buckets,function(bucket) {
-				return bucket.Count;
+				return bucket.count;
 			})]);
 		d3.select(ReactDOM.findDOMNode(this.refs.xaxis)).call(this.xAxis);
 		d3.select(ReactDOM.findDOMNode(this.refs.area))
@@ -339,9 +339,9 @@ var QueryBuilderRule = React.createClass({
 		var schema = this.props.schema.filters[field];
 		var value = "";
 		if(schema.hasOwnProperty("min") && schema.hasOwnProperty("max")) {
-			value = (schema.min+schema.max)/2
-			value = Math.round(value/schema.step)*schema.step;
-			var magnitude = Math.log10(schema.step);
+			value = (schema.stats.min+schema.stats.max)/2
+			value = Math.round(value/schema.stats.step)*schema.stats.step;
+			var magnitude = Math.log10(schema.stats.step);
 			if(magnitude < 0) {
 				value = value.toFixed(Math.abs(magnitude));
 			} else {
@@ -477,10 +477,10 @@ var QueryBuilderRule = React.createClass({
 						key={i}
 						id={"graphslider" + this.props.id + '.' + i}
 						value={this.props.value}
-						min={schema.min}
-						max={schema.max}
+						min={schema.stats.min}
+						max={schema.stats.max}
 						buckets={schema.buckets}
-						step={schema.step}
+						step={schema.stats.step}
 						onUpdate={this.setValue}
 						index={this.props.index}
 						highlightLower={
@@ -796,7 +796,7 @@ var QueryBuilderCore = React.createClass({
 				return operator.type;
 			});
 			if(filter.hasOwnProperty("min") && filter.hasOwnProperty("max")) {
-				filter.step = Math.pow(10,Math.floor(Math.log10(filter.max-filter.min)))/100;
+				filter.stats.step = Math.pow(10,Math.floor(Math.log10(filter.max-filter.min)))/100;
 			}
 			filters[filter.field] = filter;
 			fieldArray.push({
