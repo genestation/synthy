@@ -30,13 +30,11 @@ var GraphSlider = React.createClass({
 		if(value < this.props.max && value > this.props.min) {
 			value = Math.round(value/this.props.step)*this.props.step;
 			var magnitude = Math.log10(this.props.step);
-			var output = "";
 			if(magnitude < 0) {
-				output = value.toFixed(Math.abs(magnitude));
+				return parseFloat(value.toFixed(Math.min(20,Math.abs(magnitude))));
 			} else {
-				output = value.toFixed(0);
+				return parseInt(value.toFixed(0));
 			}
-			return output;
 		} else {
 			return value;
 		}
@@ -342,10 +340,11 @@ var QueryBuilderRule = React.createClass({
 			value = Math.round(schema.stats.mid/schema.stats.step)*schema.stats.step;
 			var magnitude = Math.log10(schema.stats.step);
 			if(magnitude < 0) {
-				value = parseFloat(value.toFixed(Math.abs(magnitude)));
+				value = parseFloat(value.toFixed(Math.min(20,Math.abs(magnitude))));
 			} else {
 				value = parseInt(value.toFixed(0));
 			}
+			console.log(value);
 		}
 		this.props.alterRule({
 			field: field,
@@ -478,6 +477,8 @@ var QueryBuilderRule = React.createClass({
 						value={this.props.value}
 						min={schema.stats.min}
 						max={schema.stats.max}
+						avg={schema.stats.avg}
+						stdDev={schema.stats.std_deviation}
 						buckets={schema.buckets}
 						step={schema.stats.step}
 						onUpdate={this.setValue}
