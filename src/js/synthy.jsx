@@ -58,12 +58,12 @@ var GraphSlider = React.createClass({
 
 		var that = this;
 		this.area = d3.svg.area()
-			.x(function(d) { return that.xScale(d.Bucket); })
-			.y(function(d) { return that.height-that.yScale(d.Count)-5; })
+			.x(function(d) { return that.xScale(d.bucket); })
+			.y(function(d) { return that.height-that.yScale(d.count)-5; })
 			.y0(function(d) { return that.height; });
 		this.line = d3.svg.line()
-			.x(function(d) { return that.xScale(d.Bucket); })
-			.y(function(d) { return that.height-that.yScale(d.Count)-5; });
+			.x(function(d) { return that.xScale(d.bucket); })
+			.y(function(d) { return that.height-that.yScale(d.count)-5; });
 
 		this.brush = d3.svg.brush()
 			.x(this.xScale)
@@ -338,14 +338,13 @@ var QueryBuilderRule = React.createClass({
 	setField: function(field) {
 		var schema = this.props.schema.filters[field];
 		var value = "";
-		if(schema.hasOwnProperty("min") && schema.hasOwnProperty("max")) {
-			value = (schema.stats.min+schema.stats.max)/2
-			value = Math.round(value/schema.stats.step)*schema.stats.step;
+		if(schema.type == 'double' || schema.type == 'integer') {
+			value = Math.round(schema.stats.mid/schema.stats.step)*schema.stats.step;
 			var magnitude = Math.log10(schema.stats.step);
 			if(magnitude < 0) {
-				value = value.toFixed(Math.abs(magnitude));
+				value = parseFloat(value.toFixed(Math.abs(magnitude)));
 			} else {
-				value = value.toFixed(0);
+				value = parseInt(value.toFixed(0));
 			}
 		}
 		this.props.alterRule({
@@ -795,8 +794,9 @@ var QueryBuilderCore = React.createClass({
 			}).map(function(operator) {
 				return operator.type;
 			});
-			if(filter.hasOwnProperty("min") && filter.hasOwnProperty("max")) {
-				filter.stats.step = Math.pow(10,Math.floor(Math.log10(filter.max-filter.min)))/100;
+			if(filter.hasOwnProperty("stats") && filter.stats.hasOwnProperty("min") && filter.stats.hasOwnProperty("max")) {
+				filter.stats.mid = (filter.stats.min+filter.stats.max)/2;
+				filter.stats.step = Math.pow(10,Math.floor(Math.log10(filter.stats.max-filter.stats.min)))/100;
 			}
 			filters[filter.field] = filter;
 			fieldArray.push({
