@@ -376,5 +376,6 @@ sign
 	{
 		return sign?sign:"";
 	}
+
 _
 	= [' '\t\r\n]*
