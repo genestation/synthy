@@ -2,6 +2,11 @@
 
 import {iframeResizer} from 'iframe-resizer';
 
+import synthyElastic from './synthyElastic.pegjs';
+
+export function parse(input) {
+	console.log(synthyElastic.parse(input));
+}
 
 export function init(element, options) {
 	let actions = {};

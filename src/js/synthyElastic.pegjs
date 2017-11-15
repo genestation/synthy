@@ -1,3 +1,52 @@
+{
+// Options
+// schemas = map of scopes to elasticsearch schemas
+// default_scope
+
+	function fieldClosure(field, mapping) {
+		// Initialize
+		let ptr = mapping
+		let path = [];
+		let nest = [];
+		// Find location in mapping
+		for(let part of field.split('.')) {
+			if(ptr.properties === undefined) {
+				return null;
+			}
+			if(ptr.properties[part] === undefined) {
+				return null;
+			} else {
+				ptr = ptr.properties[part];
+				path.push(part);
+			}
+			if(ptr.type === 'nested') {
+				nest.push(path.join('.'));
+			}
+		}
+		// Compute transitive closure
+		let closure = [];
+		let stack = [{ptr: ptr, path: path, nest: nest}];
+		while(stack.length > 0) {
+			let state = stack.pop();
+			ptr = state.ptr;
+			if(ptr.properties !== undefined) {
+				for(let key in ptr.properties) {
+					path = state.path.slice();
+					nest = state.nest.slice();
+					path.push(key);
+					if(ptr.properties[key].type === 'nested') {
+						nest.push(path.join('.'));
+					}
+					stack.push({ptr: ptr.properties[key], path: path, nest: nest});
+				}
+			} else {
+				closure.push({field: state.path.join('.'), nest: state.nest});
+			}
+		}
+		return closure;
+	}
+}
+
 root
 	= scope:scope _ top:top
 	{
@@ -78,26 +127,24 @@ conjunction
 rule
 	= field:field _ '=' _ value:num
 	{
-		let rule = {
-			term: {
-			}
-		}
-		rule.term[field] = value;
-		return rule;
+		let query = {
+			term: {}
+		};
+		query.term[field] = value;
+		return query;
 	}
 	/ field:field _ '!=' _ value:num
 	{
 		let term = {
-			term: {
-			}
+			term: {}
 		}
-		trm.term[field] = value;
-		let rule = {
+		term.term[field] = value;
+		let query = {
 			bool: {
 				must_not: [term],
 			}
-		}
-		return rule;
+		};
+		return query;
 	}
 	/ field:field _ '≠' _ value:num
 	{
@@ -105,146 +152,180 @@ rule
 			term: {
 			}
 		}
-		trm.term[field] = value;
-		let rule = {
+		term.term[field] = value;
+		let query = {
 			bool: {
 				must_not: [term],
 			}
-		}
-		return rule;
+		};
+		return query;
 	}
 	/ field:field _ '>' _ value:num
-	{ // TODO
-		return {
-			field: field,
-			operator: 'greater',
-			value: value
+	{
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			gt: value,
+		};
+		return query;
 	}
 	/ field:field _ '>=' _ value:num
 	{
-		return {
-			field: field,
-			operator: 'greater_or_equal',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			gte: value,
+		};
+		return query;
 	}
 	/ field:field _ '≥' _ value:num
 	{
-		return {
-			field: field,
-			operator: 'greater_or_equal',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			gte: value,
+		};
+		return query;
 	}
 	/ field:field _ '<' _ value:num
 	{
-		return {
-			field: field,
-			operator: 'less',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			lt: value,
+		};
+		return query;
 	}
 	/ field:field _ '<=' _ value:num
 	{
-		return {
-			field: field,
-			operator: 'less_or_equal',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			lte: value,
+		};
+		return query;
 	}
 	/ field:field _ '≤' _ value:num
 	{
-		return {
-			field: field,
-			operator: 'less_or_equal',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			lte: value,
+		};
+		return query;
 	}
 	/ value:num _ '=' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'equal',
-			value: value
+		let query = {
+			term: {}
 		};
+		query.term[field] = value;
+		return query;
 	}
 	/ value:num _ '!=' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'not_equal',
-			value: value
+		let term = {
+			term: {}
+		}
+		term.term[field] = value;
+		let query = {
+			bool: {
+				must_not: [term],
+			}
 		};
+		return query;
 	}
 	/ value:num _ '≠' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'not_equal',
-			value: value
+		let term = {
+			term: {}
+		}
+		term.term[field] = value;
+		let query = {
+			bool: {
+				must_not: [term],
+			}
 		};
+		return query;
 	}
 	/ value:num _ '>' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'less',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			lt: value,
+		};
+		return query;
 	}
 	/ value:num _ '>=' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'less_or_equal',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			lte: value,
+		};
+		return query;
 	}
 	/ value:num _ '≥' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'less_or_equal',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			lte: value,
+		};
+		return query;
 	}
 	/ value:num _ '<' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'greater',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			gt: value,
+		};
+		return query;
 	}
 	/ value:num _ '<=' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'greater_or_equal',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			gte: value,
+		};
+		return query;
 	}
 	/ value:num _ '≤' _ field:field
 	{
-		return {
-			field: field,
-			operator: 'greater_or_equal',
-			value: value
+		let query = {
+			range: {}
 		};
+		query.range[field] = {
+			gte: value,
+		};
+		return query;
 	}
 	/ 'NOT' _ rule:rule
 	{
-		rule.complement = true
-		return rule;
-	}
-	/ 'NOT' _ directive:directive
-	{
-		directive.complement = true
-		return directive;
+		let query = {
+			bool: {
+				must_not: rule
+			}
+		}
+		return query;
 	}
 	/ value:phrase _ field:field
 	{
+		// TODO from here down
 		return {
 			field: field,
 			operator: 'match',
