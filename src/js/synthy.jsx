@@ -6,7 +6,7 @@ import Autosuggest from 'react-autosuggest';
 import {SimpleSelect} from 'react-selectize';
 import {Button, Modal, Checkbox, FormGroup, Radio} from 'react-bootstrap';
 import d3 from 'd3';
-import venn from 'venn.js';
+import * as venn from 'venn.js';
 import {iframeResizerContentWindow} from 'iframe-resizer';
 import synthyParser from './synthyParser.pegjs';
 import {GraphSlider} from './graphSlider.jsx';
@@ -1079,6 +1079,16 @@ var QueryBuilder = React.createClass({
 })
 
 export function init(element, options) {
+	options.operators = [
+		{type: 'match',            nb_inputs: 1, multiple: false, apply_to: ['string']},
+		{type: 'less',             nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
+		{type: 'less_or_equal',    nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
+		{type: 'greater',          nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
+		{type: 'greater_or_equal', nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
+		{type: 'equal',            nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime', 'boolean']},
+		{type: 'not_equal',        nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime', 'boolean']},
+		{type: 'exists',           nb_inputs: 0, multiple: false, apply_to: ['string', 'integer', 'double', 'datetime', 'boolean']},
+	];
 	var contentLoaded, messagePosted = false;
 
 	function render() {
