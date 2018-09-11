@@ -829,12 +829,13 @@ var ActionModal = React.createClass({
 	}
 });
 
-var QueryBuilder = React.createClass({
-	currKey: 0,
-	nextKey: function() {
+class QueryBuilder extends React.Component {
+	nextKey = ()=>{
 		return this.currKey++;
-	},
-	getInitialState: function() {
+	}
+	constructor(props) {
+		super(props)
+		this.currKey = 0;
 		var urlQuery = getQueryParams(window.parent.document.location.search);
 		var query = {};
 		if(this.props.queryVar && urlQuery.hasOwnProperty(this.props.queryVar)) {
@@ -845,7 +846,7 @@ var QueryBuilder = React.createClass({
 				console.log(err)
 			}
 		}
-		return {
+		this.state = {
 			rules: query.rules?query.rules:{
 				condition: "AND",
 				rules: [],
@@ -853,9 +854,9 @@ var QueryBuilder = React.createClass({
 			venn: [],
 			scope: query.scope?query.scope:"gene/homo/sapiens",
 		};
-	},
-	componentDidMount: function() {
-		window.parent.addEventListener("popstate", function(event) {
+	}
+	componentDidMount = ()=>{
+		window.parent.addEventListener("popstate", (event)=>{
 			if(event.state && event.state.hasOwnProperty("query")) {
 				try {
 					var query = synthyParser.parse(event.state.query);
@@ -886,10 +887,10 @@ var QueryBuilder = React.createClass({
 					scope: query.scope?query.scope:"gene/homo/sapiens",
 				});
 			}
-		}.bind(this));
+		});
 		this.updateVenn();
-	},
-	submitQuery: function(action, query) {
+	}
+	submitQuery = (action, query)=>{
 		if (query === undefined) {
 			query = parseQueryObject(this.state.rules);
 		}
@@ -901,13 +902,13 @@ var QueryBuilder = React.createClass({
 		} else {
 			this.performAction(action);
 		}
-	},
-	cancelAction: function() {
+	}
+	cancelAction = ()=>{
 		this.setState({
 			currAction: null,
 		});
-	},
-	performAction: function(action, format, fields, pretty) {
+	}
+	performAction = (action, format, fields, pretty)=>{
 		let query = parseQueryObject(this.state.rules);
 		var queryString = this.props.queryVar + "=" + encodeURIComponent(this.scopeQuery(query));
 		if(!window.parent.history.state || window.parent.history.state.query != query) {
@@ -946,17 +947,17 @@ var QueryBuilder = React.createClass({
 			queryString += "&url=" + encodeURIComponent(url);
 			window.parent.location.href = action.action + "?" + queryString;
 		}
-	},
-	scopeQuery: function(query) {
+	}
+	scopeQuery = (query)=>{
 		return '@' + this.state.scope + '  ' + query;
-	},
-	parseQueryGroups: function(result) {
+	}
+	parseQueryGroups = (result)=>{
 		return result.rules.map(parseQueryObject)
 			.map(function(element, index) {
 				return {query: element, id: index}
 			})
-	},
-	updateVenn: function() {
+	}
+	updateVenn = ()=>{
 		var regions = combinations(this.parseQueryGroups(this.state.rules));
 		if (!regions) {
 			regions = [[{id:0,query:""}]]
@@ -964,8 +965,8 @@ var QueryBuilder = React.createClass({
 		var queries = [];
 		var vennSet = [];
 		for (var index = 0; index < regions.length; index++) {
-			var sets = regions[index].map(function(e) { return e.id; })
-			var query = regions[index].map(function(e) { return e.query; }).join(' AND ')
+			var sets = regions[index].map((e)=>e.id)
+			var query = regions[index].map((e)=>e.query).join(' AND ')
 			var label = ""
 			queries.push(encodeURIComponent(this.scopeQuery(query)));
 			if (sets.length === 1) {
@@ -986,7 +987,7 @@ var QueryBuilder = React.createClass({
 			'GET',
 			'/json/_count?query='+queries.join("&query="),
 			true);
-		request.onload = function() {
+		request.onload = ()=>{
 			if(request.status >= 200 && request.status < 400) {
 				var data = JSON.parse(request.responseText);
 				for(var index = 0; index < vennSet.length; index++) {
@@ -1000,10 +1001,10 @@ var QueryBuilder = React.createClass({
 					})
 				});
 			}
-		}.bind(this);
+		};
 		request.send();
-	},
-	setScope: function(scope) {
+	}
+	setScope = (scope)=>{
 		if(scope === null) {
 			scope = "gene/homo/sapiens";
 		}
@@ -1011,8 +1012,8 @@ var QueryBuilder = React.createClass({
 			scope: scope,
 		});
 		this.updateVenn();
-	},
-	setRules: function(rules) {
+	}
+	setRules = (rules)=>{
 		if(rules === null) {
 			rules = {
 				condition: "AND",
@@ -1023,11 +1024,10 @@ var QueryBuilder = React.createClass({
 			rules: rules,
 		});
 		this.updateVenn();
-	},
-	render: function() {
-		var self = this;
+	}
+	render() {
 		var fieldArray = []
-		this.props.filters.forEach(function(filter) {
+		this.props.filters.forEach((filter)=>{
 			if(!filter.label) {
 				filter.label = filter.field.split('.').slice(-1)[0]; // Split label by dots, then use last elem
 			}
@@ -1035,12 +1035,12 @@ var QueryBuilder = React.createClass({
 				value: filter.field,
 				label: filter.label,
 			});
-		},this);
+		});
 		return (
 			<div className="query-builder-container">
 				<SimpleSelect value={{label:this.state.scope,value:this.state.scope}}
 					options={this.props.scopes}
-					onValueChange={function({value}){self.setScope(value);}}
+					onValueChange={(value)=>{this.setScope(value);}}
 					hideResetButton={true}
 				/>
 				<VennDiagram ref="venn" sets={this.state.venn}
@@ -1076,7 +1076,7 @@ var QueryBuilder = React.createClass({
 			</div>
 		);
 	}
-})
+}
 
 export function init(element, options) {
 	options.operators = [

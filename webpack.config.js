@@ -1,8 +1,9 @@
 const path = require('path');
 const webpack = require('webpack');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
+var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
+	mode: 'production',
 	context: __dirname + "/src",
 	entry: {
 		core: './js/synthy.jsx',
@@ -15,53 +16,40 @@ module.exports = {
 		libraryTarget: "var"
 	},
 	module: {
-		loaders: [
+		rules: [
 			{
 				test: /\.jsx?$/,
-				loaders: ['babel?cacheDirectory'],
-				include: path.resolve(__dirname, "./src")
+				use: 'babel-loader',
 			},
 			{
 				test: /\.pegjs$/,
-				loader: 'pegjs-loader'
+				use: 'pegjs-loader',
 			},
 			{
-				test: /\.css$/,
-				loader: ExtractTextPlugin.extract("style-loader", "css-loader")
+				test: /\.s?css$/,
+				use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
 			},
 			{
 				test: /\.(woff|woff2)(\?v=\d+\.\d+\.\d+)?$/,
-				loader: 'url?limit=1000000&mimetype=application/font-woff'
+				use: 'url-loader?limit=1000000&mimetype=application/font-woff'
 			},
 			{
 				test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/,
-				loader: 'url?limit=1000000&mimetype=application/font-sfnt'
+				use: 'url-loader?limit=1000000&mimetype=application/font-sfnt'
 			},
 			{
 				test: /\.eot(\?v=\d+\.\d+\.\d+)?$/,
-				loader: 'url?limit=1000000&mimetype=application/vnd.ms-fontobject'
+				use: 'url-loader?limit=1000000&mimetype=application/vnd.ms-fontobject'
 			},
 			{
 				test: /\.svg(\?v=\d+\.\d+\.\d+)?$/,
-				loader: 'url?limit=1000000&mimetype=image/svg+xml'
+				use: 'url-loader?limit=1000000&mimetype=image/svg+xml'
 			}
 		]
 	},
 	plugins: [
-		new ExtractTextPlugin("synthy.[name].css"),
+		new MiniCssExtractPlugin({
+			filename: "synthy.[name].css",
+		}),
 	]
 };
-
-
-var production_plugins = [
-	new webpack.DefinePlugin({
-		'process.env.NODE_ENV': '"production"'
-	}),
-	new webpack.optimize.UglifyJsPlugin(),
-	new webpack.optimize.OccurenceOrderPlugin(),
-	new webpack.optimize.DedupePlugin()
-];
-
-if(process.argv.indexOf('--debug') == -1) {
-	module.exports.plugins.push(...production_plugins)
-}
