@@ -17,6 +17,31 @@ export function get_schema(es, indices) {
 		})
 }
 
+export function elastic_count(es, index, queries) {
+	let client = new elasticsearch.Client({host: es});
+	let body = [];
+	queries.forEach((query)=>{
+		body.push({});
+		if (query) {
+			body.push({
+				size: 0,
+				query: {query_string: {query: query}},
+			});
+		} else {
+			body.push({
+				size: 0,
+				query: {match_all: {}},
+			});
+		}
+	});
+	return client.msearch({
+		index: index,
+		body: body,
+	}).then((responses)=>{
+		return responses.responses.map((response)=>response.hits.total);
+	});
+}
+
 export function get_suggestions(es, index, field, text) {
 	let client = new elasticsearch.Client({host: es});
 	client.search({
