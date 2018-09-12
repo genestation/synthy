@@ -1,5 +1,4 @@
 @import '../../node_modules/bootstrap/dist/css/bootstrap.css';
-@import '../../node_modules/react-selectize/themes/index.css';
 
 .react-selectize.root-node {
 	width: 100%;

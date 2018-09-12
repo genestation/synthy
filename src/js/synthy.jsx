@@ -831,13 +831,11 @@ class QueryBuilder extends React.Component {
 		if (!regions) {
 			regions = [[{id:0,query:""}]]
 		}
-		var queries = [];
 		var vennSet = [];
 		for (var index = 0; index < regions.length; index++) {
 			var sets = regions[index].map((e)=>e.id)
 			var query = regions[index].map((e)=>e.query).join(' AND ')
 			var label = ""
-			queries.push(query);
 			if (sets.length === 1) {
 				if (query.length ===0) {
 					label = '@' + this.state.scope;
@@ -853,7 +851,7 @@ class QueryBuilder extends React.Component {
 		}
 		elastic_count(this.props.elastic, this.state.scope, vennSet.map((venn)=>venn.query))
 		.then((counts)=>{
-			counts.forEach((count, idx)=>{vennSet[idx].count = count});
+			counts.forEach((count, idx)=>{vennSet[idx].size = count});
 			let zeroes = vennSet.filter((set)=>{return set.sets.length === 1 && set.size === 0})
 				.map((set)=>{set.sets[0]})
 			this.setState({
