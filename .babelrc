@@ -1,9 +1,13 @@
 {
 	"presets": [
 		"@babel/preset-env",
-		"@babel/preset-react"
+		"@babel/preset-react",
+		"@babel/preset-typescript"
 	],
 	"plugins": [
-		"transform-class-properties"
+		"transform-class-properties",
+		["@babel/transform-runtime", {
+			"regenerator": true,
+		}]
 	]
 }

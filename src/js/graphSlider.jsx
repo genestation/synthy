@@ -13,10 +13,13 @@ export var GraphSlider = React.createClass({
 	onUpdateEvent: function(event) {
 		this.props.onUpdate(event.target.value);
 	},
+	step: function() {
+		return Math.pow(10,Math.floor(Math.log10(this.props.max-this.props.min)))/this.props.steps;
+	},
 	discretize: function(value) {
 		if(value < this.props.max && value > this.props.min) {
-			value = Math.round(value/this.props.step)*this.props.step;
-			var magnitude = Math.log10(this.props.step);
+			value = Math.round(value/this.step())*this.step();
+			var magnitude = Math.log10(this.step());
 			if(magnitude < 0) {
 				return parseFloat(value.toFixed(Math.min(20,Math.abs(magnitude))));
 			} else {
@@ -180,9 +183,9 @@ export var GraphSlider = React.createClass({
 				<div className="col-sm-3">
 					<input ref="input" type="number" className="form-control"
 						onChange={this.onUpdateEvent}
-						min={Math.floor(this.props.min/this.props.step)*this.props.step}
-						max={Math.floor(this.props.max/this.props.step)*this.props.step}
-						step={this.props.step}
+						min={Math.floor(this.props.min/this.step())*this.step()}
+						max={Math.floor(this.props.max/this.step())*this.step()}
+						step={this.step()}
 						value={this.props.value}/>
 				</div>
 				<div className="graph-slider col-sm-9">

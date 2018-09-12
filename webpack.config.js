@@ -3,7 +3,7 @@ const webpack = require('webpack');
 var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
-	mode: 'production',
+	mode: 'development',
 	context: __dirname + "/src",
 	entry: {
 		core: './js/synthy.jsx',
@@ -18,7 +18,7 @@ module.exports = {
 	module: {
 		rules: [
 			{
-				test: /\.jsx?$/,
+				test: /\.(t|j)sx?$/,
 				use: 'babel-loader',
 			},
 			{

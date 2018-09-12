@@ -13,9 +13,19 @@ export function get_schema(es, indices) {
 					schema[index][stat_obj.field] = stat_obj;
 				})
 			})
-			console.log(schema);
 			return schema;
 		})
+}
+
+export function get_suggestions(es, index, field, text) {
+	let client = new elasticsearch.Client({host: es});
+	client.search({
+		index: index,
+		suggestField: field,
+		suggestText: text,
+	}).then((response)=>{
+		console.log(response)
+	})
 }
 
 async function get_all_records(client, index) {

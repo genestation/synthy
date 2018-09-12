@@ -3,13 +3,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import Autosuggest from 'react-autosuggest';
-import {SimpleSelect} from 'react-selectize';
 import {Button, Modal, Checkbox, FormGroup, Radio} from 'react-bootstrap';
 import d3 from 'd3';
 import * as venn from 'venn.js';
 import {iframeResizerContentWindow} from 'iframe-resizer';
 import synthyParser from './synthyParser.pegjs';
+import {Dropdown, DropdownList, DropdownListFind, DropdownListOption} from './Dropdown.tsx';
 import {GraphSlider} from './graphSlider.jsx';
+import {get_schema, get_suggestions} from './Genestation.js';
 
 import '../css/vendor/query-builder.default.min.css';
 import '../css/graphslider.css';
@@ -65,21 +66,18 @@ var QueryBuilderRule = React.createClass({
 		},[this.props.index]);
 	},
 	setField: function(field) {
-		var schema = this.props.schema.filters[field];
+		var schema = this.props.schema.field[this.props.schema.scope][field];
 		var value = "";
-		if(schema.type == 'double' || schema.type == 'integer') {
-			value = Math.round(schema.stats.mid/schema.stats.step)*schema.stats.step;
-			var magnitude = Math.log10(schema.stats.step);
-			if(magnitude < 0) {
-				value = parseFloat(value.toFixed(Math.min(20,Math.abs(magnitude))));
+		if(['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date'].includes(schema.type)) {
+			if(schema.min != schema.max) {
+				value = (schema.nice_min+schema.nice_max)/2;
 			} else {
-				value = parseInt(value.toFixed(0));
+				value = schema.min;
 			}
-			console.log(value);
 		}
 		this.props.alterRule({
 			field: field,
-			operator: schema.operators[0],
+			operator: this.props.schema.operators.filter((operator)=>{operator.apply_to.includes(field)})[0],
 			value: value,
 			complement: this.props.complement,
 			id: this.props.id,
@@ -98,7 +96,7 @@ var QueryBuilderRule = React.createClass({
 		this.setValue(newValue);
 	},
 	setValue: function(value) {
-		if(this.props.schema.filters[this.props.field].type == "string") {
+		if(["text","keyword"].includes(this.props.schema.field[this.props.schema.scope][this.props.field].type)) {
 			this.updateSuggestions(value);
 		}
 		this.props.alterRule({
@@ -115,57 +113,30 @@ var QueryBuilderRule = React.createClass({
 				suggestions: []
 			});
 		} else {
-			var request = new XMLHttpRequest();
-			request.open(
-				'GET',
-				'/json/'+this.props.schema.scope+'/_suggest?query='+encodeURIComponent(query)+'&fields='+encodeURIComponent(this.props.field),
-				true);
-			request.onload = function() {
-				if(request.status >= 200 && request.status < 400) {
-					var data = JSON.parse(request.responseText);
-					this.setState({
-						suggestions: data[0]
-					});
-				}
-			}.bind(this);
-			request.send();
+			this.setState({
+				suggestions: [], // TODO
+			});
 		}
 	},
 	onSuggestionUpdateRequested: function({value}) {
 		this.updateSuggestions(value);
 	},
 	fieldElement: function() {
-		let self = this;
 		return (
 			<div className="rule-filter-container col-sm-3">
-				{this.props.field.split('.').map((elem, idx, path) => {
-					let field = path.slice(0,idx).join('.');
-					let options=this.props.schema.fieldArray.filter((elem) => {
-						let path = elem.value.split('.');
-						return path.slice(0,idx).join('.') == field
-							&& path.length == idx+1;
-					});
-					if(idx > 0) {
-						options.unshift({label:'-', value:field});
+				<select className="form-control"
+					onChange={this.setField}
+					value={this.props.field}>
+					{Object.keys(this.props.schema.fields[this.props.schema.scope]).sort()
+						.map((field, idx)=>{
+							return (
+								<option key={idx} value={operator.field}>
+									{operator.field}
+								</option>
+							);
+						})
 					}
-					return (
-						<SimpleSelect value={{label:elem,value:field}}
-							options={options}
-							onValueChange={function({value}={value:""}){self.setField(value);}}
-							hideResetButton={true}
-						/>
-					)
-				})}
-				{this.props.schema.fieldArray.findIndex((elem) => {return elem.value.startsWith(this.props.field + '.');}) > -1?
-					<SimpleSelect value={{label:'-',value:this.props.field}}
-						options={this.props.schema.fieldArray.filter((elem) => {
-							return elem.value.startsWith(this.props.field + '.')
-								&& elem.value.split('.').length == this.props.field.split('.').length + 1;
-						}) /*.unshift({label:'-',value:this.props.field})*/ }
-						onValueChange={function({value}={value:""}){self.setField(value);}}
-						hideResetButton={true}
-					/>:null
-				}
+				</select>
 			</div>
 		);
 	},
@@ -173,12 +144,14 @@ var QueryBuilderRule = React.createClass({
 		if(!this.props.field || !this.props.operator) {
 			return;
 		}
-		var schema=this.props.schema.filters[this.props.field]
-		var nb_inputs = this.props.schema.operators[this.props.operator].nb_inputs;
+		var field=this.props.schema.field[this.props.schema.scope][this.props.field]
+		var nb_inputs = this.props.schema.operators.fild((operator)=>operator.type == this.props.operator).nb_inputs;
 		var fields = []
 		for(var i = 0; i < nb_inputs; i++) {
-			switch(schema.type) {
-			case "string":
+			switch(field.type) {
+			case "text":
+			case "keyword":
+			case "date":
 				fields.push(
 					<Autosuggest
 						key={i}
@@ -199,19 +172,25 @@ var QueryBuilderRule = React.createClass({
 						}}/>
 				);
 				break;
+			case "long":
 			case "integer":
+			case "short":
+			case "byte":
 			case "double":
+			case "float":
+			case "half_float":
+			case "scaled_float":
 				fields.push(
 					<GraphSlider
 						key={i}
 						id={"graphslider" + this.props.id + '.' + i}
 						value={this.props.value}
-						min={schema.stats.min}
-						max={schema.stats.max}
-						avg={schema.stats.avg}
-						stdDev={schema.stats.std_deviation}
-						buckets={schema.buckets}
-						step={schema.stats.step}
+						min={field.min}
+						max={field.max}
+						avg={field.avg}
+						stdDev={field.std_deviation}
+						buckets={field.buckets}
+						steps={100}
 						onUpdate={this.setValue}
 						index={this.props.index}
 						highlightLower={
@@ -243,13 +222,17 @@ var QueryBuilderRule = React.createClass({
 				<select className="form-control"
 					onChange={this.setOperator}
 					value={this.props.operator}>
-					{this.props.schema.filters[this.props.field].operators.map(function(item, idx) {
-						return (
-							<option key={idx} value={item}>
-								{item.replace(/_/g," ")}
-							</option>
-						);
-					},this)}
+					{this.props.schema.operators.filter((operator)=>{
+							return operator.apply_to.includes(
+								this.props.schema.fields[this.props.schema.scope][this.props.field].type)
+						}).map((operator, idx)=>{
+							return (
+								<option key={idx} value={operator.type}>
+									{operator.type.replace(/_/g," ")}
+								</option>
+							);
+						})
+					}
 				</select>
 			</div>
 		)
@@ -462,7 +445,7 @@ var QueryBuilderCore = React.createClass({
 			last = item;
 		});
 		ptr.rules[last] = {
-			field: this.props.filters[0].field,
+			field: Object.keys(this.props.field[this.props.scope])[0].field,
 			id: this.props.nextKey(),
 		};
 		this.props.setRules(rules);
@@ -511,36 +494,10 @@ var QueryBuilderCore = React.createClass({
 		this.props.setRules(rules);
 	},
 	render: function() {
-		var operators = {}
-		this.props.operators.forEach(function(item) {
-			operators[item.type] = item;
-		});
-		var filters = {}
-		var fieldArray = []
-		this.props.filters.forEach(function(filter) {
-			if(!filter.label) {
-				filter.label = filter.field;
-			}
-			filter.operators = this.props.operators.filter(function(operator) {
-				return operator.apply_to.indexOf(filter.type) >= 0;
-			}).map(function(operator) {
-				return operator.type;
-			});
-			if(filter.hasOwnProperty("stats") && filter.stats.hasOwnProperty("min") && filter.stats.hasOwnProperty("max")) {
-				filter.stats.mid = (filter.stats.min+filter.stats.max)/2;
-				filter.stats.step = Math.pow(10,Math.floor(Math.log10(filter.stats.max-filter.stats.min)))/100;
-			}
-			filters[filter.field] = filter;
-			fieldArray.push({
-				value: filter.field,
-				label: filter.label,
-			});
-		},this);
 		var schema = {
 			scope: this.props.scope,
-			operators: operators,
-			filters: filters,
-			fieldArray: fieldArray,
+			operators: this.props.operators,
+			fields: this.props.fields,
 		};
 
 		return (
@@ -724,111 +681,6 @@ function parseQueryObject(result, root) {
 	}
 }
 
-var ActionModal = React.createClass({
-	getInitialState: function() {
-		return {
-			format: "json",
-			fields: [""],
-			pretty: true,
-		};
-	},
-	performAction: function() {
-		this.props.onSubmit(this.props.action, this.state.format, this.state.fields, this.state.pretty);
-	},
-	cancel: function() {
-		this.setState(this.getInitialState());
-		this.props.onCancel();
-	},
-	formatChange: function(e) {
-		this.setState({
-			format: e.target.value,
-		});
-	},
-	fieldChange: function(idx,value) {
-		let fields = this.state.fields;
-		fields[idx] = value.value;
-		this.setState({
-			fields: fields,
-		});
-	},
-	prettyChange: function(e) {
-		this.setState({
-			pretty: e.target.value,
-		});
-	},
-	addField: function() {
-		let fields = this.state.fields;
-		fields.push(null);
-		this.setState({
-			fields: fields,
-		});
-	},
-	renderFormat: function() {
-		return <FormGroup>
-			<Radio inline value="json"
-				checked={this.state.format=="json"}
-				onChange={this.formatChange}>
-				JSON
-			</Radio>
-			<Radio inline value="tab"
-				checked={this.state.format=="tab"}
-				onChange={this.formatChange}>
-				TAB
-			</Radio>
-		</FormGroup>;
-	},
-	renderFields: function() {
-		return <div>
-			{this.state.fields.map((item, idx) => {
-				return <SimpleSelect key={idx}
-					value={item?{label:item,value:item}:null}
-					options={this.props.fieldArray}
-					onValueChange={this.fieldChange.bind(null,idx)}
-					hideResetButton={true}
-				/>
-			})}
-			<Button bsSize="xs" bsStyle="default"
-				onClick={this.addField}>
-				<i className="glyphicon glyphicon-plus"></i>
-				&nbsp;Field
-			</Button>
-		</div>;
-	},
-	renderPretty: function() {
-		return <div>
-			<Checkbox checked={this.state.pretty} onChange={this.prettyChange} >
-				Pretty
-			</Checkbox>
-		</div>;
-	},
-	render: function() {
-		return <Modal
-					show={this.props.action != null}
-					onHide={this.cancel}
-				>
-				<Modal.Header>
-					<Modal.Title>{this.props.action && this.props.action.label}</Modal.Title>
-				</Modal.Header>
-				<Modal.Body>
-					{this.props.action && this.props.action.dialog && this.props.action.dialog.format?this.renderFormat():null}
-					{this.props.action && this.props.action.dialog && this.props.action.dialog.fields?this.renderFields():null}
-					{this.props.action && this.props.action.dialog && this.props.action.dialog.format
-						&& this.state.format=="json" && this.props.action.dialog.pretty?this.renderPretty():null}
-				</Modal.Body>
-				<Modal.Footer>
-					<Button bsStyle="primary"
-						onClick={this.performAction}>
-						{this.props.action?this.props.action.label:null}
-					</Button>
-					<Button bsStyle="default"
-						onClick={this.cancel}>
-						Cancel
-					</Button>
-				</Modal.Footer>
-			</Modal>;
-	}
-});
-
 class QueryBuilder extends React.Component {
 	nextKey = ()=>{
 		return this.currKey++;
@@ -852,7 +704,7 @@ class QueryBuilder extends React.Component {
 				rules: [],
 			},
 			venn: [],
-			scope: query.scope?query.scope:"gene/homo/sapiens",
+			scope: query.scope?query.scope:props.scopes[0],
 		};
 	}
 	componentDidMount = ()=>{
@@ -1026,23 +878,13 @@ class QueryBuilder extends React.Component {
 		this.updateVenn();
 	}
 	render() {
-		var fieldArray = []
-		this.props.filters.forEach((filter)=>{
-			if(!filter.label) {
-				filter.label = filter.field.split('.').slice(-1)[0]; // Split label by dots, then use last elem
-			}
-			fieldArray.push({
-				value: filter.field,
-				label: filter.label,
-			});
-		});
 		return (
 			<div className="query-builder-container">
-				<SimpleSelect value={{label:this.state.scope,value:this.state.scope}}
-					options={this.props.scopes}
-					onValueChange={(value)=>{this.setScope(value);}}
-					hideResetButton={true}
-				/>
+				<Dropdown className="selectcontrol-element" label="Index"
+					value={this.state.scope}>
+					<DropdownList options={this.props.scopes.map((scope)=>{return {label: scope, value: scope}})}
+						onChange={(option)=>{this.setScope(option.value)}} />
+				</Dropdown>
 				<VennDiagram ref="venn" sets={this.state.venn}
 					tooltip={function(d,i) {
 						return (d.query.length?d.query:d.label) + "<br>" + d.size + " hits";
@@ -1054,7 +896,7 @@ class QueryBuilder extends React.Component {
 				<QueryBuilderCore ref="builder"
 					scope={this.state.scope}
 					operators={this.props.operators}
-					filters={this.props.filters}
+					field={this.props.fields}
 					rules={this.state.rules}
 					setRules={this.setRules}
 					nextKey={this.nextKey}
@@ -1067,33 +909,47 @@ class QueryBuilder extends React.Component {
 						</button>
 					)
 				},this)}
-				<ActionModal
-					action={this.state.currAction}
-					onCancel={this.cancelAction}
-					onSubmit={this.performAction}
-					fieldArray={fieldArray}
-				/>
 			</div>
 		);
 	}
 }
 
 export function init(element, options) {
+	var contentLoaded, messagePosted, schemaLoaded = false;
 	options.operators = [
-		{type: 'match',            nb_inputs: 1, multiple: false, apply_to: ['string']},
-		{type: 'less',             nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
-		{type: 'less_or_equal',    nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
-		{type: 'greater',          nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
-		{type: 'greater_or_equal', nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime']},
-		{type: 'equal',            nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime', 'boolean']},
-		{type: 'not_equal',        nb_inputs: 1, multiple: false, apply_to: ['integer', 'double', 'datetime', 'boolean']},
-		{type: 'exists',           nb_inputs: 0, multiple: false, apply_to: ['string', 'integer', 'double', 'datetime', 'boolean']},
+		{type: 'match', nb_inputs: 1, multiple: false,
+			apply_to: ['text', 'keyword']},
+		{type: 'less', nb_inputs: 1, multiple: false,
+			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date']},
+		{type: 'less_or_equal', nb_inputs: 1, multiple: false,
+			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date']},
+		{type: 'greater', nb_inputs: 1, multiple: false,
+			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date']},
+		{type: 'greater_or_equal', nb_inputs: 1, multiple: false,
+			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date']},
+		{type: 'equal', nb_inputs: 1, multiple: false,
+			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date', 'boolean']},
+		{type: 'not_equal', nb_inputs: 1, multiple: false,
+			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date', 'boolean']},
+		{type: 'exists', nb_inputs: 0, multiple: false,
+			apply_to: ['text', 'keyword', 'long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date', 'boolean']},
 	];
-	var contentLoaded, messagePosted = false;
 
 	function render() {
 		ReactDOM.render(React.createElement(QueryBuilder, options), element);
 	}
+	function renderIfReady() {
+		if(contentLoaded && messagePosted && schemaLoaded) {
+			render();
+		}
+	}
+
+	get_schema(options.elastic, options.scopes)
+	.then((schema)=>{
+		options.fields=schema;
+		schemaLoaded = true;
+		renderIfReady();
+	});
 
 	function messageHandler(event) {
 		if(event.origin !== window.location.origin) return;
@@ -1101,16 +957,12 @@ export function init(element, options) {
 		Object.assign(options, event.data);
 		window.removeEventListener("message", messageHandler);
 		messagePosted = true;
-		if(contentLoaded && messagePosted) {
-			render();
-		}
+		renderIfReady();
 	};
 
 	document.addEventListener("DOMContentLoaded", function(event) {
 		contentLoaded = true;
-		if(contentLoaded && messagePosted) {
-			render();
-		}
+		renderIfReady();
 	});
 
 	window.addEventListener("message", messageHandler);
