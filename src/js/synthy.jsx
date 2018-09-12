@@ -446,8 +446,23 @@ var QueryBuilderCore = React.createClass({
 			}
 			last = item;
 		});
+
+		let field = Object.keys(this.props.fields[this.props.scope])[0];
+		let schema = this.props.fields[this.props.scope][field];
+		let operator = this.props.operators.find(
+			(operator)=>operator.apply_to.includes(schema.type)).type;
+		var value = "";
+		if(['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date'].includes(schema.type)) {
+			if(schema.min != schema.max) {
+				value = (schema.min+schema.max)/2;
+			} else {
+				value = schema.min;
+			}
+		}
 		ptr.rules[last] = {
-			field: Object.keys(this.props.fields[this.props.scope])[0].field,
+			field: field,
+			operator: operator,
+			value: value,
 			id: this.props.nextKey(),
 		};
 		this.props.setRules(rules);
