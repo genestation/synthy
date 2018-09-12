@@ -542,7 +542,6 @@ var VennDiagram = React.createClass({
 			var node = d3.select(ReactDOM.findDOMNode(this.refs.venn))
 			var tooltip = d3.select(ReactDOM.findDOMNode(this.refs.tooltip));
 			node.datum(this.props.sets).call(venn.VennDiagram())
-			/*
 			node.selectAll("svg")
 			    .style("display", "block")
 			    .style("margin", "auto")
@@ -585,7 +584,6 @@ var VennDiagram = React.createClass({
 				.on("click", function(d, i) {
 					that.props.onClick(d,i);
 				});
-				*/
 		}
 	},
 	componentDidUpdate: function() {
