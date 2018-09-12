@@ -62,14 +62,14 @@ export interface DropdownListProps {
 	onChange: (option: DropdownListOption)=>any,
 }
 export function DropdownList(props: DropdownListProps) {
-	return <ul className="dropdown-list">
-		{props.options.map((option: DropdownListOption, idx: number)=>{
+	return <ul className="dropdown-list"> {
+		props.options.map((option: DropdownListOption, idx: number)=>{
 			return <li key={idx} className="dropdown-item"
-			onClick={()=>props.onChange(option)}>
+				onClick={()=>props.onChange(option)}>
 				{option.label}
-				</li>
-		})}
-	</ul>
+			</li>
+		})
+	} </ul>
 }
 
 export function DropdownListFind(value: any, options: DropdownListOption[]) {

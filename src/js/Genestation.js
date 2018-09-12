@@ -38,7 +38,8 @@ export function elastic_count(es, index, queries) {
 		index: index,
 		body: body,
 	}).then((responses)=>{
-		return responses.responses.map((response)=>response.hits.total);
+		console.log(responses);
+		return responses.responses.map((response)=>response.hits?response.hits.total:0);
 	});
 }
 

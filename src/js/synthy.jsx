@@ -6,6 +6,9 @@ import Autosuggest from 'react-autosuggest';
 import {Button, Modal, Checkbox, FormGroup, Radio} from 'react-bootstrap';
 import d3 from 'd3';
 import * as venn from 'venn.js';
+
+import {QueryStatsPanel} from './ui/QueryStatsPanel.tsx';
+
 import {iframeResizerContentWindow} from 'iframe-resizer';
 import synthyParser from './synthyParser.pegjs';
 import {Dropdown, DropdownList, DropdownListFind, DropdownListOption} from './Dropdown.tsx';
@@ -538,7 +541,6 @@ var QueryBuilderCore = React.createClass({
 var VennDiagram = React.createClass({
 	componentDidMount: function() {
 		if (this.props.sets.length > 0) {
-			console.log(this.props.sets);
 			var node = d3.select(ReactDOM.findDOMNode(this.refs.venn))
 			var tooltip = d3.select(ReactDOM.findDOMNode(this.refs.tooltip));
 			node.datum(this.props.sets).call(venn.VennDiagram())
@@ -718,6 +720,7 @@ class QueryBuilder extends React.Component {
 				condition: "AND",
 				rules: [],
 			},
+			groups: [],
 			venn: [],
 			scope: query.scope?query.scope:props.scopes[0],
 		};
@@ -825,7 +828,11 @@ class QueryBuilder extends React.Component {
 			})
 	}
 	updateVenn = ()=>{
-		var regions = combinations(this.parseQueryGroups(this.state.rules));
+		let groups = this.parseQueryGroups(this.state.rules);
+		this.setState({
+			groups: groups.map((group)=>group.query),
+		});
+		var regions = combinations(groups);
 		if (!regions) {
 			regions = [[{id:0,query:""}]]
 		}
@@ -888,14 +895,21 @@ class QueryBuilder extends React.Component {
 					<DropdownList options={this.props.scopes.map((scope)=>{return {label: scope, value: scope}})}
 						onChange={(option)=>{this.setScope(option.value)}} />
 				</Dropdown>
-				<VennDiagram ref="venn" sets={this.state.venn}
-					tooltip={function(d,i) {
-						return (d.query.length?d.query:d.label) + "<br>" + d.size + " hits";
-					}}
-					onClick={function(d,i) {
-						this.submitQuery(this.props.actions[0], d.query);
-					}.bind(this)}
-				/>
+				<div className="query-builder-analyzer">
+					<VennDiagram ref="venn" sets={this.state.venn}
+						tooltip={function(d,i) {
+							return (d.query.length?d.query:d.label) + "<br>" + d.size + " hits";
+						}}
+						onClick={function(d,i) {
+							this.submitQuery(this.props.actions[0], d.query);
+						}.bind(this)}
+					/>
+					<QueryStatsPanel
+						elastic={this.props.elastic}
+						index={this.state.scope}
+						groups={this.state.groups}
+					/>
+				</div>
 				<QueryBuilderCore ref="builder"
 					scope={this.state.scope}
 					operators={this.props.operators}
