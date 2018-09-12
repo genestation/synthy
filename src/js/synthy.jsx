@@ -10,7 +10,7 @@ import {iframeResizerContentWindow} from 'iframe-resizer';
 import synthyParser from './synthyParser.pegjs';
 import {Dropdown, DropdownList, DropdownListFind, DropdownListOption} from './Dropdown.tsx';
 import {GraphSlider} from './graphSlider.jsx';
-import {get_schema, get_suggestions} from './Genestation.js';
+import {elastic_count, get_schema, get_suggestions} from './Genestation.js';
 
 import '../css/vendor/query-builder.default.min.css';
 import '../css/graphslider.css';
@@ -523,9 +523,11 @@ var QueryBuilderCore = React.createClass({
 var VennDiagram = React.createClass({
 	componentDidMount: function() {
 		if (this.props.sets.length > 0) {
+			console.log(this.props.sets);
 			var node = d3.select(ReactDOM.findDOMNode(this.refs.venn))
 			var tooltip = d3.select(ReactDOM.findDOMNode(this.refs.tooltip));
 			node.datum(this.props.sets).call(venn.VennDiagram())
+			/*
 			node.selectAll("svg")
 			    .style("display", "block")
 			    .style("margin", "auto")
@@ -568,6 +570,7 @@ var VennDiagram = React.createClass({
 				.on("click", function(d, i) {
 					that.props.onClick(d,i);
 				});
+				*/
 		}
 	},
 	componentDidUpdate: function() {
@@ -649,37 +652,34 @@ function parseQueryObject(result, root) {
 			return (result.complement?"NOT ":"") + '(' + output + ')';
 		}
 	} else if (result.field) {
-		var field = '[' + result.field + ']';
 		var operator;
 		switch(result.operator) {
 		case 'exists':
-			return (result.complement?"NOT ":"") + ' ' + field;
+			return (result.complement?"NOT ":"") + ' _exists_:' + result.field;
 		case 'match':
+			let esc_val = result.value.replace('"','\\"');
 			if (result.field === '') {
-				return (result.complement?"NOT ":"") + result.value;
+				return (result.complement?"NOT ":"") + '"' + esc_val + '"';
 			} else {
-				return (result.complement?"NOT ":"") + result.value + ' ' + field;
+				return (result.complement?"NOT ":"") + result.field + ':"' + esc_val + '"';
 			}
 		case 'equal':
-			operator = ' = ';
-			break;
-		case 'not_equal':
-			operator = ' ≠ ';
+			operator = '=';
 			break;
 		case 'less':
-			operator = ' < ';
+			operator = '<';
 			break;
 		case 'less_or_equal':
-			operator = ' ≤ ';
+			operator = '<=';
 			break;
 		case 'greater':
-			operator = ' > ';
+			operator = '>';
 			break;
 		case 'greater_or_equal':
-			operator = ' ≥ ';
+			operator = '>=';
 			break;
 		}
-		return (result.complement?"NOT ":"") + field + operator + result.value
+		return (result.complement?"NOT ":"") + result.field + ':' + operator + result.value
 	}
 }
 
@@ -812,7 +812,6 @@ class QueryBuilder extends React.Component {
 			})
 	}
 	updateVenn = ()=>{
-		return; //TODO
 		var regions = combinations(this.parseQueryGroups(this.state.rules));
 		if (!regions) {
 			regions = [[{id:0,query:""}]]
@@ -823,7 +822,7 @@ class QueryBuilder extends React.Component {
 			var sets = regions[index].map((e)=>e.id)
 			var query = regions[index].map((e)=>e.query).join(' AND ')
 			var label = ""
-			queries.push(encodeURIComponent(this.scopeQuery(query)));
+			queries.push(query);
 			if (sets.length === 1) {
 				if (query.length ===0) {
 					label = '@' + this.state.scope;
@@ -837,27 +836,17 @@ class QueryBuilder extends React.Component {
 				query: query,
 			});
 		}
-		var request = new XMLHttpRequest();
-		request.open(
-			'GET',
-			'/json/_count?query='+queries.join("&query="),
-			true);
-		request.onload = ()=>{
-			if(request.status >= 200 && request.status < 400) {
-				var data = JSON.parse(request.responseText);
-				for(var index = 0; index < vennSet.length; index++) {
-					vennSet[index].size = data[index];
-				}
-				var zeroes = vennSet.filter(function(e){return e.sets.length === 1 && e.size === 0;})
-					.map(function(e){return e.sets[0]});
-				this.setState({
-					venn: vennSet.filter(function(e){
-						return intersect(e.sets,zeroes).length === 0;
-					})
-				});
-			}
-		};
-		request.send();
+		elastic_count(this.props.elastic, this.state.scope, vennSet.map((venn)=>venn.query))
+		.then((counts)=>{
+			counts.forEach((count, idx)=>{vennSet[idx].count = count});
+			let zeroes = vennSet.filter((set)=>{return set.sets.length === 1 && set.size === 0})
+				.map((set)=>{set.sets[0]})
+			this.setState({
+				venn: vennSet.filter((set)=>{
+					return intersect(set.sets,zeroes).length === 0;
+				})
+			});
+		});
 	}
 	setScope = (scope)=>{
 		if(scope === null) {
@@ -931,8 +920,6 @@ export function init(element, options) {
 		{type: 'greater_or_equal', nb_inputs: 1, multiple: false,
 			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date']},
 		{type: 'equal', nb_inputs: 1, multiple: false,
-			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date', 'boolean']},
-		{type: 'not_equal', nb_inputs: 1, multiple: false,
 			apply_to: ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date', 'boolean']},
 		{type: 'exists', nb_inputs: 0, multiple: false,
 			apply_to: ['text', 'keyword', 'long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date', 'boolean']},
