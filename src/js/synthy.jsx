@@ -66,18 +66,20 @@ var QueryBuilderRule = React.createClass({
 		},[this.props.index]);
 	},
 	setField: function(field) {
-		var schema = this.props.schema.field[this.props.schema.scope][field];
+		var schema = this.props.schema.fields[this.props.schema.scope][field];
+		var operator = this.props.schema.operators.find(
+			(operator)=>operator.apply_to.includes(schema.type)).type;
 		var value = "";
 		if(['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date'].includes(schema.type)) {
 			if(schema.min != schema.max) {
-				value = (schema.nice_min+schema.nice_max)/2;
+				value = (schema.min+schema.max)/2;
 			} else {
 				value = schema.min;
 			}
 		}
 		this.props.alterRule({
 			field: field,
-			operator: this.props.schema.operators.filter((operator)=>{operator.apply_to.includes(field)})[0],
+			operator: operator,
 			value: value,
 			complement: this.props.complement,
 			id: this.props.id,
@@ -96,7 +98,7 @@ var QueryBuilderRule = React.createClass({
 		this.setValue(newValue);
 	},
 	setValue: function(value) {
-		if(["text","keyword"].includes(this.props.schema.field[this.props.schema.scope][this.props.field].type)) {
+		if(["text","keyword"].includes(this.props.schema.fields[this.props.schema.scope][this.props.field].type)) {
 			this.updateSuggestions(value);
 		}
 		this.props.alterRule({
@@ -125,13 +127,13 @@ var QueryBuilderRule = React.createClass({
 		return (
 			<div className="rule-filter-container col-sm-3">
 				<select className="form-control"
-					onChange={this.setField}
+					onChange={(event)=>this.setField(event.target.value)}
 					value={this.props.field}>
 					{Object.keys(this.props.schema.fields[this.props.schema.scope]).sort()
 						.map((field, idx)=>{
 							return (
-								<option key={idx} value={operator.field}>
-									{operator.field}
+								<option key={idx} value={field}>
+									{field}
 								</option>
 							);
 						})
@@ -144,9 +146,9 @@ var QueryBuilderRule = React.createClass({
 		if(!this.props.field || !this.props.operator) {
 			return;
 		}
-		var field=this.props.schema.field[this.props.schema.scope][this.props.field]
-		var nb_inputs = this.props.schema.operators.fild((operator)=>operator.type == this.props.operator).nb_inputs;
-		var fields = []
+		var field=this.props.schema.fields[this.props.schema.scope][this.props.field];
+		var nb_inputs = this.props.schema.operators.find((operator)=>operator.type == this.props.operator).nb_inputs;
+		var fields = [];
 		for(var i = 0; i < nb_inputs; i++) {
 			switch(field.type) {
 			case "text":
@@ -189,7 +191,7 @@ var QueryBuilderRule = React.createClass({
 						max={field.max}
 						avg={field.avg}
 						stdDev={field.std_deviation}
-						buckets={field.buckets}
+						buckets={field.histogram}
 						steps={100}
 						onUpdate={this.setValue}
 						index={this.props.index}
@@ -445,7 +447,7 @@ var QueryBuilderCore = React.createClass({
 			last = item;
 		});
 		ptr.rules[last] = {
-			field: Object.keys(this.props.field[this.props.scope])[0].field,
+			field: Object.keys(this.props.fields[this.props.scope])[0].field,
 			id: this.props.nextKey(),
 		};
 		this.props.setRules(rules);
@@ -810,6 +812,7 @@ class QueryBuilder extends React.Component {
 			})
 	}
 	updateVenn = ()=>{
+		return; //TODO
 		var regions = combinations(this.parseQueryGroups(this.state.rules));
 		if (!regions) {
 			regions = [[{id:0,query:""}]]
@@ -896,7 +899,7 @@ class QueryBuilder extends React.Component {
 				<QueryBuilderCore ref="builder"
 					scope={this.state.scope}
 					operators={this.props.operators}
-					field={this.props.fields}
+					fields={this.props.fields}
 					rules={this.state.rules}
 					setRules={this.setRules}
 					nextKey={this.nextKey}

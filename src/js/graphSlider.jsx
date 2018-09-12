@@ -40,18 +40,18 @@ export var GraphSlider = React.createClass({
 			.clamp(true);
 		this.yScale = d3.scale.linear()
 			.domain([0,d3.max(this.props.buckets,function(bucket) {
-				return bucket.count;
+				return bucket.doc_count;
 			})])
 			.range([0,this.height]);
 
 		var that = this;
 		this.area = d3.svg.area()
-			.x(function(d) { return that.xScale(d.bucket); })
-			.y(function(d) { return that.height-that.yScale(d.count)-5; })
+			.x(function(d) { return that.xScale(d.from); })
+			.y(function(d) { return that.height-that.yScale(d.doc_count)-5; })
 			.y0(function(d) { return that.height; });
 		this.line = d3.svg.line()
-			.x(function(d) { return that.xScale(d.bucket); })
-			.y(function(d) { return that.height-that.yScale(d.count)-5; });
+			.x(function(d) { return that.xScale(d.from); })
+			.y(function(d) { return that.height-that.yScale(d.doc_count)-5; });
 
 		this.brush = d3.svg.brush()
 			.x(this.xScale)
@@ -152,7 +152,7 @@ export var GraphSlider = React.createClass({
 	componentDidUpdate: function() {
 		this.xScale.domain([this.props.min, this.props.max]);
 		this.yScale.domain([0,d3.max(this.props.buckets,function(bucket) {
-				return bucket.count;
+				return bucket.doc_count;
 			})]);
 		d3.select(ReactDOM.findDOMNode(this.refs.xaxis)).call(this.xAxis);
 		d3.select(ReactDOM.findDOMNode(this.refs.area))
