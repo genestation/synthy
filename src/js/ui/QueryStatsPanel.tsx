@@ -50,10 +50,19 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 		});
 	}
 	chisquare = ()=>{
-		console.log(this.props.groups);
 		chisquare(this.props.elastic, this.props.index, this.props.groups[0], this.props.groups[1])
 		.then((output)=>{
-			console.log(output)
+			let chisqr = output.chisqr > 999 || output.chisqr < 0.1 ?
+				output.chisqr.toExponential(2) : Math.round(output.chisqr*100)/100;
+			let pval = output.pval < 0.01?output.pval.toExponential(2):Math.round(output.pval*100)/100;
+			let table = <table><tbody>
+				<tr><th>Chi-Sqr</th><td>{chisqr}</td></tr>
+				<tr><th>p-val</th><td>{pval}</td></tr>
+			</tbody></table>
+			this.setState({
+				analysis_output: table,
+			})
+
 		});
 	}
 	render() {
@@ -67,6 +76,9 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 					onChange={(option)=>{this.setState({analysis: option.value})}}
 				/>
 			</Dropdown>
+			<div className="query-stat-output">
+				{this.state.analysis_output}
+			</div>
 		</div>;
 	}
 }
