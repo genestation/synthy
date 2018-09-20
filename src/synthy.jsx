@@ -230,7 +230,7 @@ var QueryBuilderRule = React.createClass({
 		return (
 			<div className="rule-operator-container col-sm-2">
 				<Dropdown className=""
-					value={this.props.operator}>
+					value={this.props.operator.replace(/_/g," ")}>
 					<DropdownList options={operators}
 						onChange={(option)=>{this.setOperator(option.value)}} />
 				</Dropdown>
