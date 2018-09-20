@@ -7,18 +7,16 @@ import {Button, Modal, Checkbox, FormGroup, Radio} from 'react-bootstrap';
 import d3 from 'd3';
 import * as venn from 'venn.js';
 
-import {QueryStatsPanel} from './ui/QueryStatsPanel.tsx';
+import {QueryStatsPanel} from './components/QueryStatsPanel.tsx';
 
-import {iframeResizerContentWindow} from 'iframe-resizer';
-import synthyParser from './synthyParser.pegjs';
-import {Dropdown, DropdownList, DropdownListFind, DropdownListOption} from './Dropdown.tsx';
-import {GraphSlider} from './graphSlider.jsx';
-import {elastic_count, get_schema, get_suggestions} from './Genestation.js';
+import synthyParser from './helpers/synthyParser.pegjs';
+import {Dropdown, DropdownList, DropdownListFind, DropdownListOption} from './components/Dropdown.tsx';
+import {GraphSlider} from './components/graphSlider.jsx';
+import {elastic_count, get_schema, get_suggestions} from './helpers/Genestation.js';
 
-import '../css/vendor/query-builder.default.min.css';
-import '../css/graphslider.css';
-import '../css/autosuggest.css';
-import '../css/synthy.css';
+import './helpers/vendor/query-builder.default.min.css';
+import './components/autosuggest.css';
+import './synthy.css';
 
 var QueryBuilderRule = React.createClass({
 	getInitialState: function() {

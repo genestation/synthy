@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {chisquare} from '../Statistics.js';
-import {Dropdown, DropdownList} from '../Dropdown.tsx';
+import {chisquare} from '../helpers/Statistics.js';
+import {Dropdown, DropdownList} from './Dropdown.tsx';
 
 interface QueryStatsPanelProps {
 	elastic: string,
