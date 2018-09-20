@@ -11,6 +11,7 @@ import {QueryStatsPanel} from './components/QueryStatsPanel.tsx';
 
 import synthyParser from './helpers/synthyParser.pegjs';
 import {Dropdown, DropdownList, DropdownListFind, DropdownListOption} from './components/Dropdown.tsx';
+import {TreeSelect} from './components/TreeSelect.tsx';
 import {GraphSlider} from './components/graphSlider.jsx';
 import {elastic_count, get_schema, get_suggestions} from './helpers/Genestation.js';
 
@@ -26,6 +27,7 @@ var QueryBuilderRule = React.createClass({
 		};
 	},
 	componentDidUpdate: function(prevProps, prevState) {
+		if(!this.props.field || !this.props.operator || !this.props.value) return;
 		var query = parseQueryObject({
 			field: this.props.field,
 			operator: this.props.operator,
@@ -60,6 +62,16 @@ var QueryBuilderRule = React.createClass({
 	},
 	setField: function(field) {
 		var schema = this.props.schema.fields[this.props.schema.scope][field];
+		if(!schema) {
+			this.props.alterRule({
+				field: field,
+				operator: null,
+				value: null,
+				complement: this.props.complement,
+				id: this.props.id,
+			},[this.props.index]);
+			return;
+		}
 		var operator = this.props.schema.operators.find(
 			(operator)=>operator.apply_to.includes(schema.type)).type;
 		var value = "";
@@ -119,19 +131,12 @@ var QueryBuilderRule = React.createClass({
 	fieldElement: function() {
 		return (
 			<div className="rule-filter-container col-sm-3">
-				<select className="form-control"
-					onChange={(event)=>this.setField(event.target.value)}
+				<Dropdown className="" autoclose={false} label="Field"
 					value={this.props.field}>
-					{Object.keys(this.props.schema.fields[this.props.schema.scope]).sort()
-						.map((field, idx)=>{
-							return (
-								<option key={idx} value={field}>
-									{field}
-								</option>
-							);
-						})
-					}
-				</select>
+					<TreeSelect fields={Object.keys(this.props.schema.fields[this.props.schema.scope])}
+						value={this.props.field}
+						onSelect={(node)=>{this.setField(node.path)}} />
+				</Dropdown>
 			</div>
 		);
 	},
@@ -140,6 +145,9 @@ var QueryBuilderRule = React.createClass({
 			return;
 		}
 		var field=this.props.schema.fields[this.props.schema.scope][this.props.field];
+		if(!field) {
+			return;
+		}
 		var nb_inputs = this.props.schema.operators.find((operator)=>operator.type == this.props.operator).nb_inputs;
 		var fields = [];
 		for(var i = 0; i < nb_inputs; i++) {
@@ -212,6 +220,10 @@ var QueryBuilderRule = React.createClass({
 		if(!this.props.field) {
 			return;
 		}
+		let field=this.props.schema.fields[this.props.schema.scope][this.props.field];
+		if(!field) {
+			return;
+		}
 		return (
 			<div className="rule-operator-container col-sm-2">
 				<select className="form-control"
@@ -219,7 +231,7 @@ var QueryBuilderRule = React.createClass({
 					value={this.props.operator}>
 					{this.props.schema.operators.filter((operator)=>{
 							return operator.apply_to.includes(
-								this.props.schema.fields[this.props.schema.scope][this.props.field].type)
+								field.type)
 						}).map((operator, idx)=>{
 							return (
 								<option key={idx} value={operator.type}>

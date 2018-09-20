@@ -1,0 +1,21 @@
+.react-treenodelist {
+	list-style: none;
+	padding-left: 1em;
+}
+
+.react-treenode {
+	padding: 0;
+	cursor: pointer;
+}
+
+.react-treenode-label {
+	padding-left: 0.5em;
+	padding-right: 0.5em;
+}
+.react-treenode-label-active {
+	background: #c5c5c5;
+}
+
+.react-treenodecaret {
+	margin-right: 1em;
+}
