@@ -950,15 +950,13 @@ export function init(element, options) {
 			apply_to: ['text', 'keyword', 'long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date', 'boolean']},
 	];
 
-	function render() {
-		ReactDOM.render(React.createElement(QueryBuilder, options), element);
-	}
-	function renderIfReady() {
-		if(contentLoaded && messagePosted && schemaLoaded) {
-			render();
+	options.actions = options.actions.map((item) => {
+		if(typeof item.action == 'function') {
+			actions[item.label] = item.action;
+			item.action=true;
 		}
-	}
-
+		return item;
+	});
 	get_schema(options.elastic, options.scopes)
 	.then((schema)=>{
 		options.fields=schema;
@@ -966,19 +964,18 @@ export function init(element, options) {
 		renderIfReady();
 	});
 
-	function messageHandler(event) {
-		if(event.origin !== window.location.origin) return;
-
-		Object.assign(options, event.data);
-		window.removeEventListener("message", messageHandler);
-		messagePosted = true;
-		renderIfReady();
-	};
-
 	document.addEventListener("DOMContentLoaded", function(event) {
 		contentLoaded = true;
 		renderIfReady();
 	});
 
-	window.addEventListener("message", messageHandler);
+	function render() {
+		ReactDOM.render(React.createElement(QueryBuilder, options), element);
+	}
+	function renderIfReady() {
+		if(contentLoaded && schemaLoaded) {
+			render();
+		}
+	}
+
 }

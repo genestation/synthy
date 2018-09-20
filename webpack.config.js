@@ -5,13 +5,10 @@ var MiniCssExtractPlugin = require('mini-css-extract-plugin');
 module.exports = {
 	mode: 'development',
 	context: __dirname + "/src",
-	entry: {
-		core: './js/synthy.jsx',
-		client: './js/client.js',
-	},
+	entry: './js/synthy.jsx',
 	output: {
 		path: __dirname + '/dist',
-		filename: 'synthy.[name].js',
+		filename: 'synthy.js',
 		library: "Synthy",
 		libraryTarget: "var"
 	},
@@ -49,7 +46,7 @@ module.exports = {
 	},
 	plugins: [
 		new MiniCssExtractPlugin({
-			filename: "synthy.[name].css",
+			filename: "synthy.css",
 		}),
 	]
 };
