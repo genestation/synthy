@@ -224,23 +224,16 @@ var QueryBuilderRule = React.createClass({
 		if(!field) {
 			return;
 		}
+		let operators = this.props.schema.operators.filter((operator)=>{
+			return operator.apply_to.includes(field.type)
+		}).map((operator)=>{return {label: operator.type.replace(/_/g," "), value: operator.type}});
 		return (
 			<div className="rule-operator-container col-sm-2">
-				<select className="form-control"
-					onChange={this.setOperator}
+				<Dropdown className="" label="Operator"
 					value={this.props.operator}>
-					{this.props.schema.operators.filter((operator)=>{
-							return operator.apply_to.includes(
-								field.type)
-						}).map((operator, idx)=>{
-							return (
-								<option key={idx} value={operator.type}>
-									{operator.type.replace(/_/g," ")}
-								</option>
-							);
-						})
-					}
-				</select>
+					<DropdownList options={operators}
+						onChange={(option)=>{this.setOperator(option.value)}} />
+				</Dropdown>
 			</div>
 		)
 	},

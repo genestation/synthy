@@ -1,5 +1,7 @@
 .react-treenodelist {
 	list-style: none;
+	padding: 0;
+	margin: 0;
 	padding-left: 1em;
 }
 
@@ -11,6 +13,9 @@
 .react-treenode-label {
 	padding-left: 0.5em;
 	padding-right: 0.5em;
+}
+.react-treenode-label:hover {
+	background: #dadada;
 }
 .react-treenode-label-active {
 	background: #c5c5c5;

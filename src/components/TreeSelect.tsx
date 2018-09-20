@@ -72,15 +72,16 @@ export class Tree extends React.Component<TreeProps,{}> {
 		return <ul className="react-treenodelist"> {
 			this.props.data.map((node: TreeNode, idx: number)=>{
 				let children = node.children && node.children.length > 0;
-				return <li key={idx} className="react-treenode" onClick={(e)=>{e.stopPropagation(); this.props.onToggle(node)}}>
-					<span className={"react-treenode-label" + (node.active?" react-treenode-label-active":"")}>
+				return <li key={idx} className="react-treenode">
+					<div className={"react-treenode-label" + (node.active?" react-treenode-label-active":"")}
+						 onClick={(e)=>{e.stopPropagation(); this.props.onToggle(node)}}>
 						{children?
 							<span className="react-treenode-caret"> {
 								node.toggled?<FontAwesomeIcon icon={faCaretDown}/>:<FontAwesomeIcon icon={faCaretRight}/>
 							} </span>
 						:null}
 						{node.name}
-					</span>
+					</div>
 					{children && node.toggled?<Tree onToggle={this.props.onToggle} data={node.children} />:null}
 				</li>
 			})
