@@ -34,27 +34,19 @@ var QueryBuilderRule = React.createClass({
 			value: this.props.value,
 			complement: this.props.complement,
 		});
-		var request = new XMLHttpRequest();
-		request.open(
-			'GET',
-			'/json/_count?query='+query,
-			true);
-		request.onload = function() {
-			if(request.status >= 200 && request.status < 400) {
-				var data = JSON.parse(request.responseText);
-				var count = data[0];
-				if(count === 0 && this.state.error.length === 0) {
-					this.setState({
-						error: "Empty set",
-					});
-				} else if (count > 0 && this.state.error === "Empty set") {
-					this.setState({
-						error: "",
-					});
-				}
+		elastic_count(this.props.elastic, this.state.scope, [query])
+		.then((counts)=>{
+			var count = counts[0];
+			if(count === 0 && this.state.error.length === 0) {
+				this.setState({
+					error: "Empty set",
+				});
+			} else if (count > 0 && this.state.error === "Empty set") {
+				this.setState({
+					error: "",
+				});
 			}
-		}.bind(this);
-		request.send();
+		});
 	},
 	deleteRule: function(event) {
 		this.props.deleteRule([this.props.index]);
@@ -371,6 +363,7 @@ var QueryBuilderGroup = React.createClass({
 							if(item.hasOwnProperty('rules')) {
 								return (
 									<QueryBuilderGroup
+										elastic={this.props.elastic}
 										addRule={this.addRule}
 										addGroup={this.addGroup}
 										setCondition={this.setCondition}
@@ -388,6 +381,7 @@ var QueryBuilderGroup = React.createClass({
 							} else {
 								return (
 									<QueryBuilderRule
+										elastic={this.props.elastic}
 										alterRule={this.alterRule}
 										deleteRule={this.deleteRule}
 										schema={this.props.schema}
@@ -523,6 +517,7 @@ var QueryBuilderCore = React.createClass({
 		return (
 			<div className="query-builder">
 				<QueryBuilderGroup
+					elastic={this.props.elastic}
 					setCondition={this.setCondition}
 					setComplement={this.setComplement}
 					addRule={this.addRule}
@@ -911,6 +906,7 @@ class QueryBuilder extends React.Component {
 					/>
 				</div>
 				<QueryBuilderCore ref="builder"
+					elastic={this.props.elastic}
 					scope={this.state.scope}
 					operators={this.props.operators}
 					fields={this.props.fields}
