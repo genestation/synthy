@@ -70,7 +70,21 @@ export class Tree extends React.Component<TreeProps,{}> {
 	}
 	render() {
 		return <ul className="react-treenodelist"> {
-			this.props.data.map((node: TreeNode, idx: number)=>{
+			this.props.data.sort((a: TreeNode,b: TreeNode)=>{
+				let a_children = a.children && a.children.length > 0;
+				let b_children = b.children && b.children.length > 0;
+				if(a_children && !b_children) {
+					return -1;
+				} else if(!a_children && b_children) {
+					return 1;
+				} else if(a.name < b.name) {
+					return -1;
+				} else if(a.name > b.name) {
+					return 1;
+				} else {
+					return 0;
+				}
+			}).map((node: TreeNode, idx: number)=>{
 				let children = node.children && node.children.length > 0;
 				return <li key={idx} className="react-treenode">
 					<div className={"react-treenode-label" + (node.active?" react-treenode-label-active":"")}
