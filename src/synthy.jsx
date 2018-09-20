@@ -131,7 +131,7 @@ var QueryBuilderRule = React.createClass({
 	fieldElement: function() {
 		return (
 			<div className="rule-filter-container col-sm-3">
-				<Dropdown className="" autoclose={false} label="Field"
+				<Dropdown className="" autoclose={false}
 					value={this.props.field}>
 					<TreeSelect fields={Object.keys(this.props.schema.fields[this.props.schema.scope])}
 						value={this.props.field}
@@ -229,7 +229,7 @@ var QueryBuilderRule = React.createClass({
 		}).map((operator)=>{return {label: operator.type.replace(/_/g," "), value: operator.type}});
 		return (
 			<div className="rule-operator-container col-sm-2">
-				<Dropdown className="" label="Operator"
+				<Dropdown className=""
 					value={this.props.operator}>
 					<DropdownList options={operators}
 						onChange={(option)=>{this.setOperator(option.value)}} />

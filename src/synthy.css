@@ -34,6 +34,13 @@
 	float: none;
 }
 
+.rule-filter-container {
+	padding-left: 2em;
+}
+.rule-operator-container {
+	padding-left: 0;
+}
+
 .btn-exit {
 	color: #CCC;
 }
