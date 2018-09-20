@@ -2,27 +2,32 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import {chisquare} from '../helpers/Statistics.js';
 import {Dropdown, DropdownList} from './Dropdown.tsx';
+import {TreeSelect} from './TreeSelect.tsx';
 
 interface QueryStatsPanelProps {
 	elastic: string,
+	fields: string[],
 	index: string,
 	groups: string[],
 }
 interface QueryStatsPanelState {
 	analysis?: string,
+	analysis_field?: string,
 	analysis_output?: React.Component,
 }
 interface AnalysisMeta {
 	name: string,
 	min_group: number,
 	max_group: number,
-	func: ()=>any,
+	has_field: boolean,
+	output: ()=>any,
 }
 export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryStatsPanelState> {
 	constructor(props) {
 		super(props);
 		this.analyses = [
-			{name: 'chisqr', min_group: 2, max_group: 2, func: this.chisquare}
+			{name: 'Chi-Square', min_group: 2, max_group: 2, has_field: false, output: this.chisquare},
+			{name: 'T-test', min_group: 2, max_group: 2, has_field: true, output: this.ttest},
 		];
 		this.state = {
 			analysis: null,
@@ -31,16 +36,20 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 	componentDidUpdate(prevProps, prevState) {
 		if(arrayEquals(prevProps.groups, this.props.groups)
 			&& prevProps.index === this.props.index
-			&& prevState.analysis === this.state.analysis) {
+			&& prevState.analysis === this.state.analysis
+			&& prevState.analysis_field === this.state.analysis_field) {
 			return
 		} else if (this.state.analysis === null) {
 			let valid = this.validAnalyses();
 			if(valid.length) {
-				this.setState({analysis: valid[0].name});
+				this.setState({
+					analysis: valid[0].name,
+					analysis_field: this.props.fields[0]
+				});
 			}
 		} else {
 			this.analyses.find((analysis)=>analysis.name == this.state.analysis)
-				.func();
+				.output(this.state.analysis_field);
 		}
 	}
 	validAnalyses() {
@@ -65,17 +74,32 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 
 		});
 	}
+	ttest = (field: string)=>{
+	}
 	render() {
 		let options= this.validAnalyses().map((analysis)=>{
 			return {label: analysis.name, value: analysis.name}
 		});
+		let analysis = this.analyses.find((analysis)=>analysis.name == this.state.analysis);
 		return <div>
-			<Dropdown className="" label="Analysis"
-				value={this.state.analysis}>
-				<DropdownList options={options}
-					onChange={(option)=>{this.setState({analysis: option.value})}}
-				/>
-			</Dropdown>
+			<div>
+				<Dropdown className="" label="Analysis"
+					value={this.state.analysis}>
+					<DropdownList options={options}
+						onChange={(option)=>{this.setState({analysis: option.value, analysis_field: this.props.fields[0]})}}
+					/>
+				</Dropdown>
+			</div>
+			{analysis && analysis.has_field?
+				<div>
+					<Dropdown className="" autoclose={false} label="Field"
+						value={this.state.analysis_field}>
+						<TreeSelect fields={this.props.fields}
+							value={this.state.analysis_field}
+							onSelect={(node)=>{this.setState({analysis_field: node.path})}} />
+					</Dropdown>
+				</div>
+			:null}
 			<div className="query-stat-output">
 				{this.state.analysis_output}
 			</div>

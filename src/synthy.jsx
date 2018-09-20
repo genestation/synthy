@@ -905,6 +905,11 @@ class QueryBuilder extends React.Component {
 					<QueryStatsPanel
 						elastic={this.props.elastic}
 						index={this.state.scope}
+						fields={
+							Object.keys(this.props.fields[this.state.scope]).filter((key)=>{
+								return numeric_types.includes(this.props.fields[this.state.scope][key].type);
+							})
+						}
 						groups={this.state.groups}
 					/>
 				</div>
@@ -930,6 +935,7 @@ class QueryBuilder extends React.Component {
 	}
 }
 
+let numeric_types = ['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float'];
 export function init(element, options) {
 	var contentLoaded, messagePosted, schemaLoaded = false;
 	options.operators = [
