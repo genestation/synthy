@@ -90,10 +90,10 @@ var QueryBuilderRule = React.createClass({
 			id: this.props.id,
 		},[this.props.index]);
 	},
-	setOperator: function(event) {
+	setOperator: function(operator) {
 		this.props.alterRule({
 			field: this.props.field,
-			operator: event.target.value,
+			operator: operator,
 			value: this.props.value,
 			complement: this.props.complement,
 			id: this.props.id,
