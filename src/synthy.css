@@ -13,6 +13,9 @@
 .query-stat-output th {
 	padding-right: 1em;
 }
+.query-stat-output td {
+	padding-right: 0.5em;
+}
 
 .react-selectize.root-node {
 	width: 100%;

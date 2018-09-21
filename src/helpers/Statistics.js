@@ -1,4 +1,5 @@
 import jStat from 'jStat';
+import elasticsearch from 'elasticsearch';
 import {elastic_count} from './Genestation.js';
 
 export function chisquare(es, index, i1, i2) {
@@ -51,4 +52,39 @@ export function chisquare(es, index, i1, i2) {
 			pval: pval,
 		}
 	});
+}
+
+export function ttest(es, index, field, q0, q1) {
+	let client = new elasticsearch.Client({host: es});
+	let body = [{},{
+		size: 0,
+		query: {query_string: {query: q0}},
+		aggs: {stats: {extended_stats: {field: field}}},
+	},{},{
+		size: 0,
+		query: {query_string: {query: q1}},
+		aggs: {stats: {extended_stats: {field: field}}},
+	}];
+	return client.msearch({
+		index: index,
+		body: body,
+	}).then((responses)=>{
+		let stats0 = responses.responses[0].aggregations.stats;
+		let stats1 = responses.responses[1].aggregations.stats;
+		// Welch's t-test
+		let tstat = (stats0.avg - stats1.avg) / Math.sqrt(stats0.variance/stats0.count + stats1.variance/stats1.count)
+		let df = welsch_satterthwaite([stats0, stats1]);
+		let pval = 2*(1-jStat.studentt.cdf(Math.abs(tstat),df));
+		return {
+			tstat: tstat,
+			df: df,
+			pval: pval,
+			stats: [stats0, stats1],
+		}
+	})
+}
+
+export function welsch_satterthwaite(stats) {
+	return Math.pow(stats.reduce((accum, stat)=>accum + stat.variance/stat.count,0),2) /
+		stats.reduce((accum, stat)=>accum + Math.pow(stat.variance,2)/(Math.pow(stat.count,2)*(stat.count-1)),0);
 }

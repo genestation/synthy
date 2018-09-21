@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {chisquare} from '../helpers/Statistics.js';
+import {chisquare,ttest} from '../helpers/Statistics.js';
 import {Dropdown, DropdownList} from './Dropdown.tsx';
 import {TreeSelect} from './TreeSelect.tsx';
 
@@ -44,7 +44,8 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 			if(valid.length) {
 				this.setState({
 					analysis: valid[0].name,
-					analysis_field: this.props.fields[0]
+					analysis_field: this.props.fields[0],
+					analysis_output: null,
 				});
 			}
 		} else {
@@ -58,15 +59,17 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 				&& analysis.max_group >= this.props.groups.length;
 		});
 	}
+	cleanFloat(num) {
+		if(num) return Math.abs(num) > 999 || Math.abs(num) < 0.01 ?
+			num.toExponential(2) : Math.round(num*1000)/1000;
+		else return num;
+	}
 	chisquare = ()=>{
 		chisquare(this.props.elastic, this.props.index, this.props.groups[0], this.props.groups[1])
 		.then((output)=>{
-			let chisqr = output.chisqr > 999 || output.chisqr < 0.1 ?
-				output.chisqr.toExponential(2) : Math.round(output.chisqr*100)/100;
-			let pval = output.pval < 0.01?output.pval.toExponential(2):Math.round(output.pval*100)/100;
 			let table = <table><tbody>
-				<tr><th>Chi-Sqr</th><td>{chisqr}</td></tr>
-				<tr><th>p-val</th><td>{pval}</td></tr>
+				<tr><th>Chi-Sqr</th><td>{this.cleanFloat(output.chisqr)}</td></tr>
+				<tr><th>p-val</th><td>{this.cleanFloat(output.pval)}</td></tr>
 			</tbody></table>
 			this.setState({
 				analysis_output: table,
@@ -75,6 +78,20 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 		});
 	}
 	ttest = (field: string)=>{
+		ttest(this.props.elastic, this.props.index, field, this.props.groups[0], this.props.groups[1])
+		.then((output)=>{
+			console.log(output);
+			let table = <table><tbody>
+				<tr><th>T stat, df</th><td>{this.cleanFloat(output.tstat)}</td><td>{this.cleanFloat(output.df)}</td></tr>
+				<tr><th>p-val</th><td>{this.cleanFloat(output.pval)}</td></tr>
+				<tr><th>Avg</th><td>{this.cleanFloat(output.stats[0].avg)}</td><td>{this.cleanFloat(output.stats[1].avg)}</td></tr>
+				<tr><th>Var</th><td>{this.cleanFloat(output.stats[0].variance)}</td><td>{this.cleanFloat(output.stats[1].variance)}</td></tr>
+			</tbody></table>
+			this.setState({
+				analysis_output: table,
+			})
+
+		});
 	}
 	render() {
 		let options= this.validAnalyses().map((analysis)=>{
