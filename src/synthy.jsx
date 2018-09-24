@@ -866,12 +866,17 @@ class QueryBuilder extends React.Component {
 	}
 	setScope = (scope)=>{
 		if(scope === null) {
-			scope = "gene/homo/sapiens";
+			scope = this.props.scopes[0];
 		}
 		this.setState({
 			scope: scope,
-		});
-		this.updateVenn();
+			rules: {
+				condition: "AND",
+				rules: [],
+			},
+		},()=>{
+			this.updateVenn();
+		})
 	}
 	setRules = (rules)=>{
 		if(rules === null) {
@@ -965,6 +970,7 @@ export function init(element, options) {
 	get_schema(options.elastic, "genome")
 	.then((schema)=>{
 		options.fields=schema;
+		options.scopes=Object.keys(schema);
 		schemaLoaded = true;
 		renderIfReady();
 	});
