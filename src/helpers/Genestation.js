@@ -2,19 +2,42 @@
 
 import elasticsearch from 'elasticsearch';
 
-export function get_schema(es, indices) {
+export function get_schema(es, genome_index) {
 	let client = new elasticsearch.Client({host: es});
-	return Promise.all(indices.map((index)=>get_all_records(client,'meta.'+index)))
-		.then((responses)=>{
-			let schema = {};
-			indices.forEach((index, idx)=>{
-				schema[index] = {};
-				responses[idx].forEach((meta_obj)=>{
-					schema[index][meta_obj.field] = meta_obj;
+	return get_all_records(client,genome_index)
+	.then((response)=>{
+		return Promise.all(response.map((genome)=>{
+			// get feature indexes
+			return client.indices.getAlias({index:'feature.'+genome_identifier(genome)+'.*'})
+			.then((response)=>{
+				// get field descriptors
+				let indices = Object.keys(response);
+				return Promise.all(indices.map((index)=>get_all_records(client,'meta.'+index)))
+				.then((responses)=>{
+					let schema = {};
+					indices.forEach((index, idx)=>{
+						schema[index] = {};
+						responses[idx].forEach((meta_obj)=>{
+							schema[index][meta_obj.field] = meta_obj;
+						})
+					})
+					return schema;
 				})
 			})
-			return schema;
-		})
+		}))
+	}).then((responses)=>{
+		return responses.reduce((accum,item)=>Object.assign(accum,item),{});
+	})
+}
+
+function genome_identifier(genome) {
+	let organism = [genome.genus,genome.species];
+	if(genome.hasOwnProperty('subspecies') && typeof genome.subspecies === 'string' && genome.subspecies.length > 0) {
+		organism.push(genome.subspecies)
+	}
+	let identifier = organism.join('_').toLowerCase().replace(/[. ]/,"_")
+		+ '.' + genome.version.toLowerCase().replace(/[. ]/,"_");
+	return identifier;
 }
 
 export function elastic_count(es, index, queries) {

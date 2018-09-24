@@ -962,7 +962,7 @@ export function init(element, options) {
 		}
 		return item;
 	});
-	get_schema(options.elastic, options.scopes)
+	get_schema(options.elastic, "genome")
 	.then((schema)=>{
 		options.fields=schema;
 		schemaLoaded = true;
