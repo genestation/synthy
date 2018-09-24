@@ -76,10 +76,10 @@ var QueryBuilderRule = React.createClass({
 			(operator)=>operator.apply_to.includes(schema.type)).type;
 		var value = "";
 		if(['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date'].includes(schema.type)) {
-			if(schema.min != schema.max) {
-				value = (schema.min+schema.max)/2;
+			if(schema.stats.min != schema.stats.max) {
+				value = (schema.stats.min+schema.stats.max)/2;
 			} else {
-				value = schema.min;
+				value = schema.stats.min;
 			}
 		}
 		this.props.alterRule({
@@ -188,11 +188,11 @@ var QueryBuilderRule = React.createClass({
 						key={i}
 						id={"graphslider" + this.props.id + '.' + i}
 						value={this.props.value}
-						min={field.min}
-						max={field.max}
-						avg={field.avg}
-						stdDev={field.std_deviation}
-						buckets={field.histogram}
+						min={field.stats.min}
+						max={field.stats.max}
+						avg={field.stats.avg}
+						stdDev={field.stats.std_deviation}
+						buckets={field.stats.histogram}
 						steps={100}
 						onUpdate={this.setValue}
 						index={this.props.index}
@@ -453,10 +453,10 @@ var QueryBuilderCore = React.createClass({
 			(operator)=>operator.apply_to.includes(schema.type)).type;
 		var value = "";
 		if(['long', 'integer', 'short', 'byte', 'double', 'float', 'half_float', 'scaled_float', 'date'].includes(schema.type)) {
-			if(schema.min != schema.max) {
-				value = (schema.min+schema.max)/2;
+			if(schema.stats.min != schema.stats.max) {
+				value = (schema.stats.min+schema.stats.max)/2;
 			} else {
-				value = schema.min;
+				value = schema.stats.min;
 			}
 		}
 		ptr.rules[last] = {

@@ -4,13 +4,13 @@ import elasticsearch from 'elasticsearch';
 
 export function get_schema(es, indices) {
 	let client = new elasticsearch.Client({host: es});
-	return Promise.all(indices.map((index)=>get_all_records(client,'stats.'+index)))
+	return Promise.all(indices.map((index)=>get_all_records(client,'meta.'+index)))
 		.then((responses)=>{
 			let schema = {};
 			indices.forEach((index, idx)=>{
 				schema[index] = {};
-				responses[idx].forEach((stat_obj)=>{
-					schema[index][stat_obj.field] = stat_obj;
+				responses[idx].forEach((meta_obj)=>{
+					schema[index][meta_obj.field] = meta_obj;
 				})
 			})
 			return schema;
