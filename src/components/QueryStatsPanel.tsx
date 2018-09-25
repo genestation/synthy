@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import {chisquare,ttest} from '../helpers/Statistics.js';
+import {stats,chisquare,ttest} from '../helpers/Statistics.js';
 import {Dropdown, DropdownList} from './Dropdown.tsx';
 import {TreeSelect} from './TreeSelect.tsx';
 
@@ -26,6 +26,7 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 	constructor(props) {
 		super(props);
 		this.analyses = [
+			{name: 'Stats', min_group: 1, max_group: 1, has_field: true, output: this.stats},
 			{name: 'Chi-Square', min_group: 2, max_group: 2, has_field: false, output: this.chisquare},
 			{name: 'T-test', min_group: 2, max_group: 2, has_field: true, output: this.ttest},
 		];
@@ -64,6 +65,21 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 			num.toExponential(2) : Math.round(num*1000)/1000;
 		else return num;
 	}
+	stats = (field: string)=>{
+		stats(this.props.elastic, this.props.index, field, this.props.groups[0])
+		.then((output)=>{
+			let table = <table><tbody>
+				<tr><th>Avg</th><td>{this.cleanFloat(output.avg)}</td></tr>
+				<tr><th>Var</th><td>{this.cleanFloat(output.variance)}</td></tr>
+				<tr><th>Min</th><td>{this.cleanFloat(output.min)}</td></tr>
+				<tr><th>Max</th><td>{this.cleanFloat(output.max)}</td></tr>
+			</tbody></table>
+			this.setState({
+				analysis_output: table,
+			})
+
+		});
+	}
 	chisquare = ()=>{
 		chisquare(this.props.elastic, this.props.index, this.props.groups[0], this.props.groups[1])
 		.then((output)=>{
@@ -80,7 +96,6 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 	ttest = (field: string)=>{
 		ttest(this.props.elastic, this.props.index, field, this.props.groups[0], this.props.groups[1])
 		.then((output)=>{
-			console.log(output);
 			let table = <table><tbody>
 				<tr><th>T stat, df</th><td>{this.cleanFloat(output.tstat)}</td><td>{this.cleanFloat(output.df)}</td></tr>
 				<tr><th>p-val</th><td>{this.cleanFloat(output.pval)}</td></tr>

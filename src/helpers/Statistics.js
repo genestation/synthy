@@ -2,6 +2,21 @@ import jStat from 'jStat';
 import elasticsearch from 'elasticsearch';
 import {elastic_count} from './Genestation.js';
 
+export function stats(es, index, field, query) {
+	let client = new elasticsearch.Client({host: es});
+	let body = [{},{
+		size: 0,
+		query: {query_string: {query: query}},
+		aggs: {stats: {extended_stats: {field: field}}},
+	}];
+	return client.msearch({
+		index: index,
+		body: body,
+	}).then((responses)=>{
+		return responses.responses[0].aggregations.stats;
+	})
+}
+
 export function chisquare(es, index, i1, i2) {
 	// Create queries
 	let q1 = '(' + i1 + ')';
