@@ -40,7 +40,8 @@ export class QueryStatsPanel extends React.Component<QueryStatsPanelProps,QueryS
 			&& prevState.analysis === this.state.analysis
 			&& prevState.analysis_field === this.state.analysis_field) {
 			return
-		} else if (this.state.analysis === null) {
+		} else if (this.props.groups.length != prevProps.groups.length
+			|| this.state.analysis === null) {
 			let valid = this.validAnalyses();
 			if(valid.length) {
 				this.setState({
